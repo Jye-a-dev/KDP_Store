@@ -19,11 +19,17 @@ interface Product {
 interface ProductCardProps {
   product: Product;
   getCategoryName: (catId: number) => string;
+  isAdmin?: boolean;
+  onEdit?: (p: Product) => void;
+  onDelete?: (id: number) => void;
 }
 
 export default function ProductCard({
   product,
   getCategoryName,
+  isAdmin,
+  onEdit,
+  onDelete,
 }: ProductCardProps) {
   const getProductImage = (images2d: string[] | string) => {
     if (Array.isArray(images2d)) {
@@ -42,7 +48,7 @@ export default function ProductCard({
   // 3D badge: detect by SKU prefix (FS- = furniture/3D)
   const isFurniture = product.sku.startsWith("FS-") || product.sku.startsWith("3D-");
   const priceVal = Math.round(Number(product.price));
-  
+
   // Simulated discount logic for aesthetic matching (sale badges)
   const hasDiscount = product.id % 3 === 0;
   const displayPrice = priceVal;
@@ -51,7 +57,7 @@ export default function ProductCard({
   // Badge configs to look like the streetwear mock
   let badgeColor = "bg-[#03AED2] text-white"; // Cyan default (New In)
   let badgeText = "New In";
-  
+
   if (hasDiscount) {
     badgeColor = "bg-[#D12052] text-[#F8DE22]"; // Pink/Yellow (Sale)
     badgeText = "Sale -20%";
@@ -61,49 +67,86 @@ export default function ProductCard({
   }
 
   return (
-    <div className="group flex flex-col bg-white text-left relative">
+    <div className="group flex flex-col bg-white text-left relative transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_15px_40px_-15px_rgba(0,0,0,0.15)] p-2 rounded-2xl">
       {/* Image Wrap */}
-      <div className="relative aspect-3/4 w-full overflow-hidden bg-[#f7f9fa] border border-[#e8ecef] mb-4">
+      <div className="relative aspect-3/4 w-full overflow-hidden bg-[#f7f9fa] border border-[#e8ecef] rounded-xl mb-4">
         {/* Badge */}
-        <span className={`absolute top-3 left-3 px-3 py-1.5 text-[10px] uppercase font-bold tracking-wide z-10 ${badgeColor}`}>
+        <span className={`absolute top-3 left-3 px-3 py-1.5 text-[10px] uppercase font-bold tracking-wide z-10 shadow-md rounded-lg ${badgeColor}`}>
           {badgeText}
         </span>
-        {/* Wishlist button */}
-        <button className="absolute top-3 right-3 bg-white border border-[#111111] rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition hover:bg-[#D12052] hover:border-[#D12052] hover:text-white z-10">
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-        </button>
+
+        {/* Wishlist / Admin buttons */}
+        {isAdmin ? (
+          <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-20">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit?.(product);
+              }}
+              className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              title="Sửa sản phẩm"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 13.5-13.5z" />
+              </svg>
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.confirm(`Bạn có chắc muốn xóa sản phẩm ${product.name}?`)) {
+                  onDelete?.(product.id);
+                }
+              }}
+              className="bg-[#D12052] text-white border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              title="Xóa sản phẩm"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <button className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm border border-transparent shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-[#D12052] hover:border-[#D12052] hover:text-white hover:scale-110 active:scale-95 z-10">
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+          </button>
+        )}
+
+        {/* Overlay Gradient (appears on hover to make text pop) */}
+        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"></div>
 
         {/* Image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80"}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
         />
 
-        {/* Quick Add Hover button (slides up from bottom, hidden on mobile) */}
-        <Link 
+        {/* Quick Add Hover button */}
+        <Link
           href="/login"
-          className="absolute bottom-0 left-0 w-full bg-[#111111] text-white py-3.5 text-center text-[11px] font-bold uppercase tracking-[1px] translate-y-full transition-transform duration-300 group-hover:translate-y-0 group-hover:bg-[#03AED2] hidden md:block"
+          className="absolute bottom-0 left-0 w-full bg-[#111111]/95 backdrop-blur-md text-white py-4 text-center text-[11px] font-bold uppercase tracking-[1px] translate-y-full transition-all duration-300 ease-out group-hover:translate-y-0 hover:bg-[#03AED2]! hidden md:block z-10 shadow-lg"
         >
           {isFurniture ? "Trải nghiệm 3D +" : "Thêm Ngay +"}
         </Link>
       </div>
 
       {/* Product Info */}
-      <div className="flex flex-col gap-1 px-1">
-        <span className="text-[10px] font-bold uppercase text-[#D12052] tracking-wider">
+      <div className="flex flex-col gap-1.5 px-2 pb-1">
+        <span className="text-[10px] font-bold uppercase text-[#D12052] tracking-wider transition-colors">
           {isFurniture ? "3D Ready - " : ""}{getCategoryName(product.category_id)}
         </span>
-        <h3 className="font-semibold text-[13px] md:text-[14px] text-[#111111] line-clamp-1">
+        <h3 className="font-semibold text-[13px] md:text-[14px] text-[#111111] line-clamp-1 transition-colors duration-300 group-hover:text-[#03AED2]">
           {product.name}
         </h3>
-        
+
         {/* Price rendering */}
-        <div className="flex items-center gap-2 mt-1">
-          <span className={`font-bold text-[14px] md:text-[15px] ${hasDiscount ? "text-[#D12052]" : "text-[#111111]"}`}>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className={`font-bold text-[14px] md:text-[16px] transition-all duration-300 ${hasDiscount ? "text-[#D12052]" : "text-[#111111]"}`}>
             {displayPrice.toLocaleString("vi-VN")}đ
           </span>
           {hasDiscount && (
@@ -113,19 +156,19 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* Custom Color Swatches (aesthetic) */}
-        <div className="flex gap-1.5 mt-1">
+        {/* Custom Color Swatches */}
+        <div className="flex gap-2 mt-2">
           {isFurniture ? (
             <>
-              <div className="w-3.5 h-3.5 rounded-full border border-black/20 cursor-pointer" style={{ backgroundColor: "#8B5A2B" }} />
-              <div className="w-3.5 h-3.5 rounded-full border border-black/20 cursor-pointer" style={{ backgroundColor: "#555" }} />
-              <div className="w-3.5 h-3.5 rounded-full border border-black/20 cursor-pointer" style={{ backgroundColor: "#d2b48c" }} />
+              <div className="w-3.5 h-3.5 rounded-full border border-black/10 cursor-pointer shadow-sm transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-offset-1 hover:ring-black/20" style={{ backgroundColor: "#8B5A2B" }} />
+              <div className="w-3.5 h-3.5 rounded-full border border-black/10 cursor-pointer shadow-sm transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-offset-1 hover:ring-black/20" style={{ backgroundColor: "#555" }} />
+              <div className="w-3.5 h-3.5 rounded-full border border-black/10 cursor-pointer shadow-sm transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-offset-1 hover:ring-black/20" style={{ backgroundColor: "#d2b48c" }} />
             </>
           ) : (
             <>
-              <div className="w-3.5 h-3.5 rounded-full border border-black/20 cursor-pointer bg-[#03AED2]" />
-              <div className="w-3.5 h-3.5 rounded-full border border-black/20 cursor-pointer bg-[#F45B26]" />
-              <div className="w-3.5 h-3.5 rounded-full border border-black/20 cursor-pointer bg-[#111111]" />
+              <div className="w-3.5 h-3.5 rounded-full border border-black/10 cursor-pointer shadow-sm transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-offset-1 hover:ring-black/20 bg-[#03AED2]" />
+              <div className="w-3.5 h-3.5 rounded-full border border-black/10 cursor-pointer shadow-sm transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-offset-1 hover:ring-black/20 bg-[#F45B26]" />
+              <div className="w-3.5 h-3.5 rounded-full border border-black/10 cursor-pointer shadow-sm transition-all duration-200 hover:scale-125 hover:ring-2 hover:ring-offset-1 hover:ring-black/20 bg-[#111111]" />
             </>
           )}
         </div>

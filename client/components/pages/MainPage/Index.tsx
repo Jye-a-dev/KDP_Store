@@ -5,35 +5,34 @@ import Hero from "./Hero";
 import FeaturedCollections from "./FeaturedCollections";
 import ProductCard from "./ProductCard";
 import Newsletter from "./Newsletter";
-
-interface Product {
-  id: number;
-  category_id: number;
-  name: string;
-  slug: string;
-  sku: string;
-  price: string;
-  description: string;
-  stock: number;
-  images_2d: string[] | string;
-  model_3d_url: string | null;
-  is_published: boolean;
-}
-
-interface Category {
-  id: number;
-  parent_id: number | null;
-  name: string;
-  slug: string;
-}
+import { useCategories } from "@/hooks/useCategories";
+import { useProducts } from "@/hooks/useProducts";
+import { useAuth } from "@/contexts/AuthContext";
+import ProductModal from "./ProductModal";
+import CategoryModal from "@/components/pages/AdminCategories/CategoryModal";
+import { Product, Category } from "@/types/api";
 
 export default function MainPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { user, token } = useAuth();
+  const { categories, tree, fetchAll: fetchCategories, deleteCategory } = useCategories();
+  const { products, isLoading, fetchProducts, deleteProduct } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+
+  const isAdmin = user?.role === "admin";
+
+  const [productModal, setProductModal] = useState<{
+    open: boolean;
+    mode: "create" | "edit";
+    product?: Product;
+  }>({ open: false, mode: "create" });
+
+  const [categoryModal, setCategoryModal] = useState<{
+    open: boolean;
+    mode: "create" | "edit";
+    category?: Category;
+  }>({ open: false, mode: "create" });
 
   // Debounce search input
   useEffect(() => {
@@ -45,47 +44,13 @@ export default function MainPage() {
 
   // Fetch categories
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    fetch(`${apiUrl}/categories`)
-      .then((res) => res.json())
-      .then((data) => {
-        const list = Array.isArray(data) ? data : data.data || [];
-        setCategories(list);
-      })
-      .catch((err) => console.error("Error fetching categories:", err));
-  }, []);
+    fetchCategories();
+  }, [fetchCategories]);
 
   // Fetch products
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    let url = `${apiUrl}/products`;
-    const params: string[] = [];
-
-    if (selectedCategory !== null) {
-      params.push(`category_id=${selectedCategory}`);
-    }
-    if (debouncedSearch.trim() !== "") {
-      params.push(`search=${encodeURIComponent(debouncedSearch)}`);
-    }
-
-    if (params.length > 0) {
-      url += `?${params.join("&")}`;
-    }
-
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        const list = Array.isArray(data) ? data : data.data || [];
-        setProducts(list);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching products:", err);
-        setIsLoading(false);
-      });
-  }, [selectedCategory, debouncedSearch]);
+    fetchProducts(selectedCategory, debouncedSearch);
+  }, [selectedCategory, debouncedSearch, fetchProducts]);
 
   const getCategoryName = (categoryId: number) => {
     const cat = categories.find((c) => c.id === categoryId);
@@ -100,6 +65,24 @@ export default function MainPage() {
     }
   };
 
+  const handleDeleteCategory = async (id: number) => {
+    try {
+      await deleteCategory(id);
+      fetchCategories();
+      setSelectedCategory(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      await deleteProduct(id);
+      fetchProducts(selectedCategory, debouncedSearch);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div className="flex w-full flex-col font-sans bg-white">
@@ -121,6 +104,27 @@ export default function MainPage() {
           </h2>
         </div>
 
+        {/* Admin Quick Actions */}
+        {isAdmin && (
+          <div className="flex items-center gap-3 px-[5%] mb-6 flex-wrap bg-[#F8DE22]/10 border-2 border-[#111111] p-3 rounded-2xl mx-[5%] shadow-[3px_3px_0px_#111111]">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-[#111111] mr-2">
+              🛠️ BẢNG ĐIỀU KHIỂN ADMIN:
+            </span>
+            <button
+              onClick={() => setCategoryModal({ open: true, mode: "create" })}
+              className="bg-[#111111] text-white px-4 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wide border-2 border-[#111111] hover:bg-[#F8DE22] hover:text-[#111111] transition-all cursor-pointer shadow-[2px_2px_0px_#D12052]"
+            >
+              + Thêm Danh Mục
+            </button>
+            <button
+              onClick={() => setProductModal({ open: true, mode: "create" })}
+              className="bg-[#03AED2] text-white px-4 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wide border-2 border-[#111111] hover:bg-white hover:text-[#111111] transition-all cursor-pointer shadow-[2px_2px_0px_#111111]"
+            >
+              + Thêm Sản Phẩm
+            </button>
+          </div>
+        )}
+
         {/* Filter and Search Bar Controls */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 px-[5%] mb-8">
           {/* Categories Tabs */}
@@ -136,17 +140,48 @@ export default function MainPage() {
               Tất cả
             </button>
             {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 border-2 border-[#111111] transition-all duration-300 ${
-                  selectedCategory === cat.id
-                    ? "bg-[#D12052] text-white border-[#D12052] shadow-[2px_2px_0px_#111111]"
-                    : "bg-white text-[#111111] hover:bg-[#F8DE22]"
-                }`}
-              >
-                {cat.name}
-              </button>
+              <div key={cat.id} className="relative group/cat">
+                <button
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 border-2 border-[#111111] transition-all duration-300 ${
+                    selectedCategory === cat.id
+                      ? "bg-[#D12052] text-white border-[#D12052] shadow-[2px_2px_0px_#111111]"
+                      : "bg-white text-[#111111] hover:bg-[#F8DE22]"
+                  }`}
+                >
+                  {cat.name}
+                </button>
+                {isAdmin && (
+                  <div className="absolute -top-2 -right-2 hidden group-hover/cat:flex gap-1 z-20">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCategoryModal({ open: true, mode: "edit", category: cat });
+                      }}
+                      className="w-5 h-5 bg-[#F8DE22] border-2 border-[#111111] rounded flex items-center justify-center text-[10px] cursor-pointer shadow-[1px_1px_0px_#111111]"
+                      title="Sửa danh mục"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          window.confirm(
+                            `Bạn có chắc muốn xóa danh mục "${cat.name}"? Các danh mục con sẽ trở thành danh mục gốc.`
+                          )
+                        ) {
+                          handleDeleteCategory(cat.id);
+                        }
+                      }}
+                      className="w-5 h-5 bg-[#D12052] text-white border-2 border-[#111111] rounded flex items-center justify-center text-[10px] cursor-pointer shadow-[1px_1px_0px_#111111]"
+                      title="Xóa danh mục"
+                    >
+                      ❌
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
 
@@ -207,6 +242,9 @@ export default function MainPage() {
                 key={product.id}
                 product={product}
                 getCategoryName={getCategoryName}
+                isAdmin={isAdmin}
+                onEdit={(p) => setProductModal({ open: true, mode: "edit", product: p })}
+                onDelete={handleDeleteProduct}
               />
             ))}
           </div>
@@ -215,6 +253,35 @@ export default function MainPage() {
 
       {/* 4. NEWSLETTER BLOCK */}
       <Newsletter />
+
+      {/* Product Form Modal */}
+      {productModal.open && token && (
+        <ProductModal
+          mode={productModal.mode}
+          product={productModal.product}
+          categories={categories}
+          onClose={() => setProductModal({ open: false, mode: "create" })}
+          onSaved={() => {
+            setProductModal({ open: false, mode: "create" });
+            fetchProducts(selectedCategory, debouncedSearch);
+          }}
+        />
+      )}
+
+      {/* Category Form Modal */}
+      {categoryModal.open && token && (
+        <CategoryModal
+          mode={categoryModal.mode}
+          category={categoryModal.category}
+          tree={tree}
+          token={token}
+          onClose={() => setCategoryModal({ open: false, mode: "create" })}
+          onSaved={() => {
+            setCategoryModal({ open: false, mode: "create" });
+            fetchCategories();
+          }}
+        />
+      )}
     </div>
   );
 }

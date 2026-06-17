@@ -241,13 +241,17 @@ function DashboardInner({ children }: { children: ReactNode }) {
   );
 }
 
+import { PageContentProvider } from "@/contexts/PageContentContext";
+
 // ─── Exported Layout ──────────────────────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi">
       <body className="antialiased">
         <AuthProvider>
-          <DashboardInner>{children}</DashboardInner>
+          <PageContentProvider>
+            <DashboardInner>{children}</DashboardInner>
+          </PageContentProvider>
         </AuthProvider>
       </body>
     </html>

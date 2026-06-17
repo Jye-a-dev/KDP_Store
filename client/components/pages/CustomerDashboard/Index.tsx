@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Order, OrderStats } from "@/types/api";
+import { useOrders } from "@/hooks/useOrders";
 import StatBadge from "./StatBadge";
+import EditableText from "@/components/layouts/(public)/EditableText";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -17,52 +18,26 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString("vi-VN");
 }
 
+// Format currency
 function formatVND(n: number) {
   return n.toLocaleString("vi-VN") + "₫";
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function CustomerDashboard() {
-  const { user, token } = useAuth();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
-  const [orders, setOrders]       = useState<Order[]>([]);
-  const [stats, setStats]         = useState<OrderStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { orders, orderStats: stats, isLoading, fetchCustomerOrders } = useOrders();
 
   const now = new Date();
   const hour = now.getHours();
   const greeting =
     hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
 
-  const fetchData = useCallback(async () => {
-    if (!user?.id) return;
-    setIsLoading(true);
-    try {
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const [ordersRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/orders?user_id=${user.id}&limit=5&sort_by=created_at&sort_order=DESC`, { headers }),
-        fetch(`${API_URL}/orders/count?user_id=${user.id}`, { headers }),
-      ]);
-
-      const ordersData = (await ordersRes.json()) as { data: Order[] };
-      const statsData  = (await statsRes.json()) as OrderStats;
-
-      setOrders(Array.isArray(ordersData) ? ordersData : ordersData.data ?? []);
-      setStats(statsData);
-    } catch {
-      // silently fail — show empty state
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, token, API_URL]);
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-  }, [fetchData]);
+    if (user?.id) {
+      fetchCustomerOrders(user.id);
+    }
+  }, [user?.id, fetchCustomerOrders]);
 
   return (
     <div className="max-w-4xl mx-auto pb-24 md:pb-8">
@@ -85,7 +60,7 @@ export default function CustomerDashboard() {
           </div>
         </div>
         <div className="relative z-10 mt-4 inline-flex items-center gap-2 bg-[#F8DE22] text-[#111111] text-[10px] font-extrabold uppercase tracking-widest px-3 py-1.5 rounded-full">
-          <span>⭐</span> Z-CLUB Member
+          <span>⭐</span> <EditableText contentKey="customer_promo_badge" />
         </div>
       </div>
 
@@ -99,13 +74,21 @@ export default function CustomerDashboard() {
       {/* ── Promo banner ── */}
       <div className="bg-[#D12052] border-2 border-[#111111] rounded-2xl shadow-[4px_4px_0px_#111111] p-4 mb-8 flex items-center justify-between gap-4">
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/70 mb-0.5">Ưu đãi dành riêng cho bạn</p>
-          <p className="text-white font-extrabold uppercase text-sm">
-            Nhập <mark className="bg-[#F8DE22] text-[#111111] px-1">ZCLUB15</mark> giảm thêm 15%
-          </p>
+          <EditableText
+            contentKey="customer_promo_title"
+            element="p"
+            className="text-[10px] font-extrabold uppercase tracking-widest text-white/70 mb-0.5 block"
+          />
+          <div className="text-white font-extrabold uppercase text-sm flex items-center gap-1.5">
+            Nhập{" "}
+            <mark className="bg-[#F8DE22] text-[#111111] px-1 inline-block">
+              <EditableText contentKey="customer_promo_code" />
+            </mark>{" "}
+            <EditableText contentKey="customer_promo_desc" />
+          </div>
         </div>
         <button type="button" className="shrink-0 bg-white text-[#D12052] text-[11px] font-extrabold uppercase tracking-wider px-4 py-2 rounded-full border-2 border-white shadow-[2px_2px_0px_#111111] hover:bg-[#F8DE22] hover:text-[#111111] transition-all cursor-pointer">
-          Mua Ngay
+          <EditableText contentKey="customer_promo_btn" />
         </button>
       </div>
 

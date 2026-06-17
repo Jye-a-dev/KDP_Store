@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Category, CategoryNode } from "./types";
 import { flattenForSelect } from "./helpers";
+import { useCategories } from "@/hooks/useCategories";
 
 interface CategoryModalProps {
   mode: "create" | "edit";
@@ -19,14 +20,13 @@ export default function CategoryModal({
   onClose,
   onSaved,
 }: CategoryModalProps) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+  const { createCategory, updateCategory, isLoading: hookLoading, error: hookError } = useCategories();
   const [name, setName] = useState(category?.name ?? "");
   const [parentId, setParentId] = useState<string>(
     category?.parent_id !== null && category?.parent_id !== undefined
       ? String(category.parent_id)
       : ""
   );
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const parentOptions = flattenForSelect(tree, 0, category?.id);
@@ -37,38 +37,24 @@ export default function CategoryModal({
       setError("Tên danh mục không được để trống");
       return;
     }
-    setLoading(true);
     setError("");
 
-    const body: { name: string; parent_id?: number | null } = { name: name.trim() };
-    if (parentId !== "") body.parent_id = Number(parentId);
-    else body.parent_id = null;
+    const pId = parentId !== "" ? Number(parentId) : null;
 
     try {
-      const res = await fetch(
-        mode === "create"
-          ? `${API_URL}/categories`
-          : `${API_URL}/categories/${category!.id}`,
-        {
-          method: mode === "create" ? "POST" : "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        }
-      );
-      if (!res.ok) {
-        const data = (await res.json()) as { message?: string };
-        throw new Error(data.message ?? "Có lỗi xảy ra");
+      if (mode === "create") {
+        await createCategory(name.trim(), pId);
+      } else {
+        await updateCategory(category!.id, name.trim(), pId);
       }
       onSaved();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi không xác định");
-    } finally {
-      setLoading(false);
+      setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     }
   };
+
+  const displayError = error || hookError || "";
+  const loading = hookLoading;
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -91,9 +77,9 @@ export default function CategoryModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4">
-          {error && (
+          {displayError && (
             <div className="p-3 bg-[#D12052]/10 border border-[#D12052] text-[#D12052] text-xs font-bold rounded-lg">
-              ⚠️ {error}
+              ⚠️ {displayError}
             </div>
           )}
 

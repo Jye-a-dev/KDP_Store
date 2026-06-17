@@ -45,3 +45,30 @@ export interface UserStats {
   active: number;
   inactive: number;
 }
+
+export interface Product {
+  id: number;
+  category_id: number;
+  name: string;
+  slug: string;
+  sku: string;
+  price: string;
+  description: string;
+  stock: number;
+  images_2d: string[] | string;
+  model_3d_url: string | null;
+  is_published: boolean;
+}
+
+export interface Category {
+  id: number;
+  parent_id: number | null;
+  name: string;
+  slug: string;
+  created_at?: string;
+}
+
+export interface CategoryNode extends Category {
+  children: CategoryNode[];
+}
+

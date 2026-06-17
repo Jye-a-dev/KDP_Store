@@ -1,11 +1,2 @@
-export interface Category {
-  id: number;
-  parent_id: number | null;
-  name: string;
-  slug: string;
-  created_at: string;
-}
+export type { Category, CategoryNode } from "@/types/api";
 
-export interface CategoryNode extends Category {
-  children: CategoryNode[];
-}

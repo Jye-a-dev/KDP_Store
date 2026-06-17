@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Order, OrderStats, UserStats } from "@/types/api";
+import { useAdminStats } from "@/hooks/useAdminStats";
 import AnimatedStat from "./AnimatedStat";
 import { StatCard } from "./types";
 
@@ -26,48 +26,16 @@ function formatDate(d: string) {
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { user, token } = useAuth();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
-  const [orders,     setOrders]     = useState<Order[]>([]);
-  const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
-  const [userStats,  setUserStats]  = useState<UserStats | null>(null);
-  const [isLoading,  setIsLoading]  = useState(true);
+  const { user } = useAuth();
+  const { orders, orderStats, userStats, isLoading, fetchAdminDashboardData } = useAdminStats();
 
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const [ordersRes, orderStatsRes, userStatsRes] = await Promise.all([
-        fetch(`${API_URL}/orders?limit=5&sort_by=created_at&sort_order=DESC`, { headers }),
-        fetch(`${API_URL}/orders/count`, { headers }),
-        fetch(`${API_URL}/users/count`, { headers }),
-      ]);
-
-      const ordersData     = (await ordersRes.json())     as { data: Order[] };
-      const orderStatsData = (await orderStatsRes.json()) as OrderStats;
-      const userStatsData  = (await userStatsRes.json())  as UserStats;
-
-      setOrders(Array.isArray(ordersData) ? ordersData : ordersData.data ?? []);
-      setOrderStats(orderStatsData);
-      setUserStats(userStatsData);
-    } catch {
-      // silently fail
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token, API_URL]);
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-  }, [fetchData]);
+    fetchAdminDashboardData();
+  }, [fetchAdminDashboardData]);
 
   const STATS: StatCard[] = [
     {

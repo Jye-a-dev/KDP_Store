@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCategories } from "@/hooks/useCategories";
 import { Category, CategoryNode } from "./types";
 import { buildTree } from "./helpers";
 import CategoryTreeRow from "./CategoryTreeRow";
@@ -9,11 +10,7 @@ import CategoryModal from "./CategoryModal";
 
 export default function AdminCategories() {
   const { token } = useAuth();
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
-
-  const [all, setAll] = useState<Category[]>([]);
-  const [tree, setTree] = useState<CategoryNode[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { categories: all, tree, isLoading, fetchAll, deleteCategory } = useCategories();
   const [search, setSearch] = useState("");
 
   // Modal state
@@ -30,34 +27,14 @@ export default function AdminCategories() {
     name?: string;
   }>({ open: false });
 
-  const fetchAll = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/categories?limit=200`);
-      const data = await res.json() as { data: Category[] };
-      const list = Array.isArray(data) ? data : data.data ?? [];
-      setAll(list);
-      setTree(buildTree(list));
-    } catch {
-      setAll([]);
-      setTree([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [API_URL]);
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAll();
   }, [fetchAll]);
 
   const handleDelete = async () => {
-    if (!deleteConfirm.id || !token) return;
+    if (!deleteConfirm.id) return;
     try {
-      await fetch(`${API_URL}/categories/${deleteConfirm.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await deleteCategory(deleteConfirm.id);
       setDeleteConfirm({ open: false });
       fetchAll();
     } catch {

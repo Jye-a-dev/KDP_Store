@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import PublicFooter from "@/components/layouts/(public)/Footer/PublicFooter";
 import PublicNavbar from "@/components/layouts/(public)/Navbar/PublicNavbar";
+import EditableText from "@/components/layouts/(public)/EditableText";
 
 type PublicSetupProps = {
   children: ReactNode;
@@ -13,7 +14,7 @@ export default function PublicSetup({ children }: PublicSetupProps) {
     <div className="flex flex-col min-h-screen w-full relative pb-16.25 md:pb-0 bg-white">
       {/* Top Announcement Bar */}
       <div className="w-full bg-[#D12052] text-white text-center py-2.5 px-5 text-[11px] font-bold uppercase tracking-[1.5px]">
-        Săn Deal Khởi Động Hè - Nhập mã &quot;NewSale_2026&quot; giảm thêm 15%
+        <EditableText contentKey="announcement_bar" />
       </div>
 
       <PublicNavbar />
