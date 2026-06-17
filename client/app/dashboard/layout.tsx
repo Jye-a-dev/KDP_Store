@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import "../../app/globals.css";
+import "../globals.css";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 const IconGrid = () => (
@@ -57,8 +57,8 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin", label: "Tổng Quan", icon: <IconGrid /> },
   { href: "/dashboard/admin/orders", label: "Đơn Hàng", icon: <IconShoppingBag /> },
   { href: "/dashboard/admin/products", label: "Sản Phẩm", icon: <IconBox /> },
+  { href: "/dashboard/admin/categories", label: "Danh Mục", icon: <IconBarChart /> },
   { href: "/dashboard/admin/customers", label: "Khách Hàng", icon: <IconUsers /> },
-  { href: "/dashboard/admin/analytics", label: "Phân Tích", icon: <IconBarChart /> },
 ];
 
 const CUSTOMER_NAV = [

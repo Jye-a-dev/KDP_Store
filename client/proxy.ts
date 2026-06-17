@@ -41,7 +41,18 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/customer", request.url));
   }
 
-  // 3. Already-logged-in user on auth pages → redirect to dashboard
+  // 3. Customer-only route accessed by non-customer
+  if (pathname.startsWith("/dashboard/customer") && token && role !== "customer") {
+    return NextResponse.redirect(new URL("/dashboard/admin", request.url));
+  }
+
+  // 4. Base /dashboard route redirect
+  if (pathname === "/dashboard" && token) {
+    const dest = role === "admin" ? "/dashboard/admin" : "/dashboard/customer";
+    return NextResponse.redirect(new URL(dest, request.url));
+  }
+
+  // 5. Already-logged-in user on auth pages → redirect to dashboard
   if (isAuthRoute(pathname) && token) {
     const dest = role === "admin" ? "/dashboard/admin" : "/dashboard/customer";
     return NextResponse.redirect(new URL(dest, request.url));

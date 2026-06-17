@@ -18,13 +18,11 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
-  furnitureCat: number | null;
   getCategoryName: (catId: number) => string;
 }
 
 export default function ProductCard({
   product,
-  furnitureCat,
   getCategoryName,
 }: ProductCardProps) {
   const getProductImage = (images2d: string[] | string) => {
@@ -34,14 +32,15 @@ export default function ProductCard({
     try {
       const parsed = JSON.parse(images2d);
       if (Array.isArray(parsed)) return parsed[0] || "";
-    } catch (e) {
+    } catch {
       // ignore
     }
     return typeof images2d === "string" ? images2d : "";
   };
 
   const imageUrl = getProductImage(product.images_2d);
-  const isFurniture = product.sku.startsWith("FS-1") || product.category_id === furnitureCat;
+  // 3D badge: detect by SKU prefix (FS- = furniture/3D)
+  const isFurniture = product.sku.startsWith("FS-") || product.sku.startsWith("3D-");
   const priceVal = Math.round(Number(product.price));
   
   // Simulated discount logic for aesthetic matching (sale badges)

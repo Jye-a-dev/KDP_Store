@@ -22,6 +22,7 @@ interface Product {
 
 interface Category {
   id: number;
+  parent_id: number | null;
   name: string;
   slug: string;
 }
@@ -56,6 +57,7 @@ export default function MainPage() {
 
   // Fetch products
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
     let url = `${apiUrl}/products`;
@@ -90,11 +92,6 @@ export default function MainPage() {
     return cat ? cat.name : "Sản phẩm";
   };
 
-  // Find category IDs to wire up the collections cards
-  const furnitureCat = categories.find((c) => c.slug === "furniture")?.id || null;
-  const clothingCat = categories.find((c) => c.slug.includes("clothing") || c.slug.includes("men"))?.id || null;
-  const accessoriesCat = categories.find((c) => c.slug === "jewelery" || c.slug === "electronics")?.id || null;
-
   const handleCategorySelect = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
     const element = document.getElementById("products-section");
@@ -103,16 +100,15 @@ export default function MainPage() {
     }
   };
 
+
   return (
     <div className="flex w-full flex-col font-sans bg-white">
       {/* 1. HERO SECTION */}
       <Hero />
 
-      {/* 2. PREMIUM CATEGORIES */}
+      {/* 2. FEATURED CATEGORIES — real API data */}
       <FeaturedCollections
-        furnitureCat={furnitureCat}
-        clothingCat={clothingCat}
-        accessoriesCat={accessoriesCat}
+        categories={categories}
         handleCategorySelect={handleCategorySelect}
       />
 
@@ -210,7 +206,6 @@ export default function MainPage() {
               <ProductCard
                 key={product.id}
                 product={product}
-                furnitureCat={furnitureCat}
                 getCategoryName={getCategoryName}
               />
             ))}

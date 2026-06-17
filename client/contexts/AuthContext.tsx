@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = localStorage.getItem(USER_KEY);
       if (storedToken && storedUser) {
         const parsedUser = JSON.parse(storedUser) as AuthUser;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setToken(storedToken);
         setUser(parsedUser);
         // Re-sync cookies so proxy guard can read them after a hard refresh
