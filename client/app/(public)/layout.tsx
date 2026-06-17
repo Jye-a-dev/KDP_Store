@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import PublicSetup from "@/components/layouts/(public)/PublicSetup";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "Template React",
-  description: "Giao diện template React đơn giản.",
+  title: "KDP Store - Thời Trang Phong Cách",
+  description: "Khám phá bộ sưu tập thời trang streetwear độc đáo tại KDP Store.",
 };
 
 type PublicLayoutProps = {
@@ -17,11 +18,12 @@ type PublicLayoutProps = {
 export default function PublicLayout({ children }: PublicLayoutProps) {
   return (
     <html lang="vi">
-      <body className="min-h-screen bg-[#f6f4ef] text-neutral-900">
-        <div className="mx-auto flex min-h-screen w-full max-w-350 flex-col border-x border-neutral-200 bg-white">
+      <body className="min-h-screen bg-white text-[#111111] antialiased">
+        <AuthProvider>
           <PublicSetup>{children}</PublicSetup>
-        </div>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+

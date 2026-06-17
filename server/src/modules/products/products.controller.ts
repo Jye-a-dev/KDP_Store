@@ -33,6 +33,15 @@ import {
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Post('seed')
+  @ApiOperation({ summary: 'Seed sản phẩm và danh mục từ Fake Store API' })
+  @ApiCreatedResponse({
+    description: 'Seed dữ liệu thành công.',
+  })
+  seed() {
+    return this.productsService.seed();
+  }
+
   @Post()
   @ApiOperation({ summary: 'Tạo mới một sản phẩm 3D' })
   @ApiCreatedResponse({

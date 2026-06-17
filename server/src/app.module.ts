@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { appConfig } from './config/app.config';
 import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { UserIdentitiesModule } from './modules/user-identities/user-identities.module';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -20,6 +21,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
       load: [appConfig],
     }),
     DatabaseModule,
+    AuthModule,
     UsersModule,
     UserIdentitiesModule,
     CategoriesModule,

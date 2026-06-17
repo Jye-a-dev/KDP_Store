@@ -3,8 +3,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class QueryProductDto {
   @ApiPropertyOptional({
     description: 'Trang hiện tại (bắt đầu từ 1)',
-    example: 1,
-    default: 1,
     minimum: 1,
     type: Number,
   })
@@ -12,8 +10,6 @@ export class QueryProductDto {
 
   @ApiPropertyOptional({
     description: 'Số bản ghi mỗi trang (tối đa 100)',
-    example: 10,
-    default: 10,
     minimum: 1,
     maximum: 100,
     type: Number,
