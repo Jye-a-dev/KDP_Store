@@ -25,14 +25,14 @@ export default function EditableText({
   const isAdmin = user?.role === "admin";
   const textValue = content[contentKey] || "";
 
-  const handleStartEdit = (e: React.MouseEvent) => {
+  const handleStartEdit = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setVal(textValue);
     setIsEditing(true);
   };
 
-  const handleSave = (e?: React.MouseEvent | React.FormEvent) => {
+  const handleSave = (e?: React.MouseEvent | React.FormEvent | React.KeyboardEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -41,7 +41,7 @@ export default function EditableText({
     setIsEditing(false);
   };
 
-  const handleCancel = (e: React.MouseEvent) => {
+  const handleCancel = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsEditing(false);
@@ -71,22 +71,27 @@ export default function EditableText({
             }}
           />
         )}
-        <button
+        {/* Đổi <button> thành <span role="button"> để tránh Hydration Error */}
+        <span
+          role="button"
+          tabIndex={0}
           onClick={handleSave}
-          type="button"
+          onKeyDown={(e) => e.key === "Enter" && handleSave(e)}
           className="w-6 h-6 rounded bg-green-500 text-white border border-[#111111] flex items-center justify-center text-[10px] cursor-pointer shadow-[1px_1px_0px_#111111]"
           title="Lưu"
         >
           ✓
-        </button>
-        <button
+        </span>
+        <span
+          role="button"
+          tabIndex={0}
           onClick={handleCancel}
-          type="button"
+          onKeyDown={(e) => e.key === "Enter" && handleCancel(e)}
           className="w-6 h-6 rounded bg-[#D12052] text-white border border-[#111111] flex items-center justify-center text-[10px] cursor-pointer shadow-[1px_1px_0px_#111111]"
           title="Hủy"
         >
           ✕
-        </button>
+        </span>
       </span>
     );
   }
@@ -100,13 +105,17 @@ export default function EditableText({
   return (
     <Tag className={`relative group/editable inline-block ${className}`}>
       {textValue}
-      <button
+      {/* Đổi <button> thành <span role="button"> để tránh Hydration Error */}
+      <span
+        role="button"
+        tabIndex={0}
         onClick={handleStartEdit}
+        onKeyDown={(e) => e.key === "Enter" && handleStartEdit(e)}
         className="absolute -top-3.5 -right-3.5 opacity-0 group-hover/editable:opacity-100 bg-[#F8DE22] text-[#111111] border border-[#111111] shadow-[1px_1px_0px_#111111] rounded w-5 h-5 flex items-center justify-center text-[9px] cursor-pointer transition-opacity z-40"
         title="Chỉnh sửa nội dung"
       >
         ✏️
-      </button>
+      </span>
     </Tag>
   );
 }

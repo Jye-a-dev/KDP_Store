@@ -72,3 +72,38 @@ export interface CategoryNode extends Category {
   children: CategoryNode[];
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface ProductStats {
+  total: number;
+  published: number;
+  hidden: number;
+  out_of_stock: number;
+}
+
+export interface UserAddress {
+  name: string;
+  phone: string;
+  address: string;
+  is_default?: boolean;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string | null;
+  avatar_url: string | null;
+  role: "customer" | "admin";
+  is_active: boolean;
+  addresses: UserAddress[];
+  created_at: string;
+  updated_at: string;
+}
+
