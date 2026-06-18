@@ -6,19 +6,19 @@ export class CreateUserIdentityDto {
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     format: 'uuid',
   })
-  user_id: string;
+  user_id!: string;
 
   @ApiProperty({
     description: 'Nhà cung cấp OAuth (ví dụ: google, facebook)',
     example: 'google',
   })
-  provider: string;
+  provider!: string;
 
   @ApiProperty({
     description: 'ID người dùng được cấp bởi nhà cung cấp OAuth',
     example: '12345678901234567890',
   })
-  provider_id: string;
+  provider_id!: string;
 
   @ApiPropertyOptional({
     description: 'Email liên kết từ nhà cung cấp OAuth',

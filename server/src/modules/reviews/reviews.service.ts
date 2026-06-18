@@ -58,7 +58,7 @@ export class ReviewsService {
     }
 
     // 3. Kiểm tra rating hợp lệ
-    if (dto.rating < 1 || dto.rating > 5) {
+    if (dto.rating! < 1 || dto.rating! > 5) {
       throw new BadRequestException('Số sao đánh giá phải từ 1 đến 5 sao');
     }
 

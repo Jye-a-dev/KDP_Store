@@ -6,25 +6,25 @@ export class MaterialsConfigDto {
     example: ['#FF0000', '#00FF00', '#0000FF'],
     type: [String],
   })
-  colors: string[];
+  colors!: string[];
 
   @ApiProperty({
     description: 'Danh sách link texture của vật liệu',
     example: ['https://storage.kdpstore.vn/textures/wood_pattern.jpg'],
     type: [String],
   })
-  textures: string[];
+  textures!: string[];
 }
 
 export class CameraConfigDto {
   @ApiProperty({ description: 'Góc alpha của camera', example: 0 })
-  alpha: number;
+  alpha?: number;
 
   @ApiProperty({ description: 'Góc beta của camera', example: 1 })
-  beta: number;
+  beta?: number;
 
   @ApiProperty({ description: 'Khoảng cách bán kính của camera', example: 5 })
-  radius: number;
+  radius?: number;
 }
 
 export class CreateProductDto {
@@ -41,7 +41,7 @@ export class CreateProductDto {
     minLength: 2,
     maxLength: 255,
   })
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({
     description: 'Đường dẫn tĩnh duy nhất. Tự động sinh từ tên nếu trống.',
@@ -53,14 +53,14 @@ export class CreateProductDto {
     description: 'Mã định danh sản phẩm duy nhất (SKU)',
     example: 'SOFA-CL-01',
   })
-  sku: string;
+  sku!: string;
 
   @ApiProperty({
     description: 'Giá bán gốc',
     example: 5500000,
     minimum: 0,
   })
-  price: number;
+  price!: number;
 
   @ApiPropertyOptional({
     description: 'Giá khuyến mãi (nếu có)',

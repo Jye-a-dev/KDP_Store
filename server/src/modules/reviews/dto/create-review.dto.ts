@@ -13,7 +13,7 @@ export class CreateReviewDto {
     description: 'ID của sản phẩm được đánh giá',
     example: 1,
   })
-  product_id: number;
+  product_id!: number;
 
   @ApiProperty({
     description: 'Số sao đánh giá (từ 1 đến 5 sao)',
@@ -21,7 +21,7 @@ export class CreateReviewDto {
     minimum: 1,
     maximum: 5,
   })
-  rating: number;
+  rating?: number;
 
   @ApiPropertyOptional({
     description: 'Nội dung nhận xét chi tiết',

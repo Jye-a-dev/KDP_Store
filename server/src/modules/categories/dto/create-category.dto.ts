@@ -14,7 +14,7 @@ export class CreateCategoryDto {
     minLength: 2,
     maxLength: 100,
   })
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({
     description:

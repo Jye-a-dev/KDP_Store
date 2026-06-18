@@ -55,7 +55,11 @@ export class OrdersService {
       let totalAmount = 0;
 
       // 2. Kiểm tra tồn kho và lấy thông tin giá từng sản phẩm
-      for (const item of dto.items) {
+      // FIX 1: Thêm fallback `|| []` để tránh lỗi dto.items bị undefined
+      for (const item of dto.items || []) {
+        // FIX 2: Xử lý item.quantity bị undefined và ép về number mặc định là 1
+        const orderQuantity = Number(item.quantity ?? 1);
+
         // Query khóa dòng (SELECT FOR UPDATE) để tránh tranh chấp đồng thời
         const prodRes = await client.query<Product>(
           'SELECT id, name, price, discount_price, stock, is_published FROM products WHERE id = $1 FOR UPDATE',
@@ -75,9 +79,10 @@ export class OrdersService {
           );
         }
 
-        if (product.stock < item.quantity) {
+        // Dùng biến orderQuantity đã được làm sạch
+        if (product.stock < orderQuantity) {
           throw new ConflictException(
-            `Sản phẩm "${product.name}" không đủ hàng trong kho (Còn lại: ${product.stock}, yêu cầu: ${item.quantity})`,
+            `Sản phẩm "${product.name}" không đủ hàng trong kho (Còn lại: ${product.stock}, yêu cầu: ${orderQuantity})`,
           );
         }
 
@@ -88,19 +93,19 @@ export class OrdersService {
             ? Number(product.discount_price)
             : Number(product.price);
 
-        totalAmount += activePrice * item.quantity;
+        totalAmount += activePrice * orderQuantity;
 
         // Trừ kho
         await client.query(
           'UPDATE products SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
-          [item.quantity, item.product_id],
+          [orderQuantity, item.product_id],
         );
 
         // Thêm vào snapshot
         itemsSnapshot.push({
           product_id: product.id,
           name: product.name,
-          quantity: item.quantity,
+          quantity: orderQuantity, // FIX 3: Truyền thẳng số nguyên chuẩn
           price: activePrice,
           color: item.color,
         });

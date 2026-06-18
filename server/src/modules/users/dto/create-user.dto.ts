@@ -5,19 +5,19 @@ export class AddressDto {
     description: 'Tên người nhận tại địa chỉ này',
     example: 'Nguyễn Văn A',
   })
-  name: string;
+  name!: string;
 
   @ApiProperty({
     description: 'Số điện thoại liên lạc tại địa chỉ này',
     example: '0901234567',
   })
-  phone: string;
+  phone!: string;
 
   @ApiProperty({
     description: 'Địa chỉ đầy đủ (số nhà, đường, quận, tỉnh/thành)',
     example: '123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
   })
-  address: string;
+  address!: string;
 
   @ApiPropertyOptional({
     description: 'Đánh dấu đây là địa chỉ mặc định',
@@ -33,7 +33,7 @@ export class CreateUserDto {
     example: 'nguyenvana@example.com',
     format: 'email',
   })
-  email: string;
+  email!: string;
 
   @ApiPropertyOptional({
     description:
@@ -48,7 +48,7 @@ export class CreateUserDto {
     minLength: 2,
     maxLength: 100,
   })
-  full_name: string;
+  full_name!: string;
 
   @ApiPropertyOptional({
     description: 'Số điện thoại (10 chữ số, bắt đầu bằng 0)',

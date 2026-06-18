@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateOrderItemDto {
   @ApiProperty({ description: 'ID của sản phẩm', example: 1 })
-  product_id: number;
+  product_id: number | undefined;
 
   @ApiProperty({ description: 'Số lượng mua', example: 1, minimum: 1 })
-  quantity: number;
+  quantity: number | undefined;
 
   @ApiPropertyOptional({ description: 'Màu sắc lựa chọn', example: '#000000' })
   color?: string;
@@ -17,7 +17,7 @@ export class CreateOrderPaymentInfoDto {
     example: 'COD',
     default: 'COD',
   })
-  method: string;
+  method: string | undefined;
 
   @ApiPropertyOptional({
     description: 'Mã giao dịch từ cổng thanh toán',
@@ -53,19 +53,19 @@ export class CreateOrderDto {
     description: 'Họ tên người nhận hàng',
     example: 'Nguyễn Văn A',
   })
-  shipping_name: string;
+  shipping_name: string | undefined;
 
   @ApiProperty({
     description: 'Số điện thoại nhận hàng',
     example: '0901234567',
   })
-  shipping_phone: string;
+  shipping_phone: string | undefined;
 
   @ApiProperty({
     description: 'Địa chỉ nhận hàng chi tiết',
     example: '123 Nguyễn Huệ, Quận 1, TP. HCM',
   })
-  shipping_address: string;
+  shipping_address: string | undefined;
 
   @ApiPropertyOptional({
     description: 'Phí vận chuyển',
@@ -79,7 +79,7 @@ export class CreateOrderDto {
       'Danh sách sản phẩm mua (chỉ cần gửi ID và số lượng, server tự tính giá hiện tại)',
     type: [CreateOrderItemDto],
   })
-  items: CreateOrderItemDto[];
+  items: CreateOrderItemDto[] | undefined;
 
   @ApiPropertyOptional({
     description: 'Thông tin thanh toán ban đầu',
