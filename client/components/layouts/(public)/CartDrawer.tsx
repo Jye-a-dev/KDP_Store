@@ -1,0 +1,360 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+
+export default function CartDrawer() {
+  const router = useRouter();
+  const { user, token, isAuthenticated } = useAuth();
+  const {
+    cartItems,
+    isCartOpen,
+    setIsCartOpen,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    cartTotal,
+    cartCount,
+  } = useCart();
+
+  const [step, setStep] = useState<"cart" | "checkout">("cart");
+  const [shippingName, setShippingName] = useState("");
+  const [shippingPhone, setShippingPhone] = useState("");
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Sync user info for checkout
+  useEffect(() => {
+    if (user) {
+      setShippingName(user.full_name || "");
+      setShippingPhone(user.phone || "");
+    }
+  }, [user]);
+
+  // Reset step when drawer closes/opens
+  useEffect(() => {
+    if (!isCartOpen) {
+      setStep("cart");
+      setCheckoutError(null);
+      setSuccessMsg(null);
+    }
+  }, [isCartOpen]);
+
+  if (!isCartOpen) return null;
+
+  const handleCheckoutClick = () => {
+    if (!isAuthenticated) {
+      setIsCartOpen(false);
+      router.push("/login");
+      return;
+    }
+    setStep("checkout");
+  };
+
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shippingName || !shippingPhone || !shippingAddress) {
+      setCheckoutError("Vui lòng điền đầy đủ thông tin giao hàng.");
+      return;
+    }
+    setCheckoutError(null);
+    setIsSubmitting(true);
+
+    try {
+      const body = {
+        user_id: user?.id,
+        items: cartItems.map((item) => ({
+          product_id: item.id,
+          quantity: item.quantity,
+          color: item.color || "Mặc định",
+        })),
+        shipping_fee: 30000,
+        shipping_name: shippingName,
+        shipping_phone: shippingPhone,
+        shipping_address: shippingAddress,
+        payment_info: {
+          method: paymentMethod,
+          status: "pending",
+        },
+      };
+
+      const res = await fetch(`${API_URL}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errData = (await res.json()) as { message?: string };
+        throw new Error(errData.message || "Đặt hàng thất bại.");
+      }
+
+      setSuccessMsg("🎉 Đặt hàng thành công! Đang chuyển hướng...");
+      clearCart();
+      setTimeout(() => {
+        setIsCartOpen(false);
+        router.push("/dashboard/customer/orders");
+      }, 2000);
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      {/* Backdrop */}
+      <div
+        onClick={() => setIsCartOpen(false)}
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+      />
+
+      {/* Drawer panel */}
+      <div className="relative w-full max-w-md bg-white border-l-4 border-[#111111] h-full shadow-[-8px_0px_0px_#111111] flex flex-col z-10 animate-in slide-in-from-right duration-300">
+        {/* Header */}
+        <div className="bg-[#111111] text-white p-5 flex items-center justify-between border-b-4 border-[#111111]">
+          <div>
+            <h3 className="font-extrabold uppercase tracking-wider text-sm">
+              {step === "cart" ? "Giỏ Hàng Của Bạn" : "Thông Tin Thanh Toán"}
+            </h3>
+            {step === "cart" && (
+              <p className="text-[10px] text-[#F8DE22] font-bold uppercase mt-0.5">
+                {cartCount} sản phẩm
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setIsCartOpen(false)}
+            className="text-white/70 hover:text-white text-lg font-bold transition-colors cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Content */}
+        {successMsg ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <span className="text-5xl mb-4">🎉</span>
+            <h4 className="text-lg font-black text-emerald-600 uppercase tracking-wide">Đặt Hàng Thành Công!</h4>
+            <p className="text-xs text-gray-500 font-semibold mt-2">{successMsg}</p>
+          </div>
+        ) : step === "cart" ? (
+          // STEP 1: CART ITEMS
+          <>
+            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+              {cartItems.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
+                  <span className="text-4xl mb-3">🛍️</span>
+                  <p className="text-sm font-bold text-[#555]">Giỏ hàng của bạn đang trống</p>
+                  <button
+                    onClick={() => setIsCartOpen(false)}
+                    className="mt-6 border-2 border-[#111111] bg-[#111111] text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wide shadow-[3px_3px_0px_#F8DE22] hover:bg-[#F8DE22] hover:text-[#111111] transition-all cursor-pointer rounded-xl"
+                  >
+                    Tiếp tục mua sắm
+                  </button>
+                </div>
+              ) : (
+                cartItems.map((item) => (
+                  <div
+                    key={`${item.id}-${item.color}`}
+                    className="flex gap-4 p-3 border-2 border-[#111111] rounded-2xl bg-[#f7f9fa] shadow-[2px_2px_0px_#111111]"
+                  >
+                    <div className="w-16 h-16 bg-white border-2 border-[#111111] rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="min-w-0 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start gap-2">
+                          <h4 className="font-bold text-xs text-[#111111] uppercase truncate">{item.name}</h4>
+                          <button
+                            onClick={() => removeFromCart(item.id, item.color)}
+                            className="text-gray-400 hover:text-[#D12052] transition-colors cursor-pointer"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-gray-500 font-bold uppercase">
+                          <span>Màu:</span>
+                          <span className="w-3 h-3 rounded-full border border-black/10 inline-block" style={{ backgroundColor: item.color }} />
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-2">
+                        {/* Quantity controls */}
+                        <div className="inline-flex items-center border border-[#111111] rounded-lg overflow-hidden bg-white">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.color, item.quantity - 1)}
+                            className="px-2.5 py-0.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-xs"
+                          >
+                            -
+                          </button>
+                          <span className="px-3 py-0.5 text-[11px] font-extrabold font-mono border-l border-r border-[#111111]">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.color, item.quantity + 1)}
+                            className="px-2.5 py-0.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-xs"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <p className="font-extrabold text-[#D12052] text-xs">
+                          {(item.price * item.quantity).toLocaleString("vi-VN")}đ
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer calculations & CTAs */}
+            {cartItems.length > 0 && (
+              <div className="border-t-4 border-[#111111] p-5 flex flex-col gap-4 bg-white">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500">TỔNG TIỀN HÀNG:</span>
+                  <span className="text-lg font-black text-[#111111]">{cartTotal.toLocaleString("vi-VN")}đ</span>
+                </div>
+                <button
+                  onClick={handleCheckoutClick}
+                  className="w-full py-4 bg-[#F8DE22] text-[#111111] font-extrabold text-xs uppercase tracking-widest rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[3px_3px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer text-center"
+                >
+                  Tiến Hành Thanh Toán
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          // STEP 2: CHECKOUT FORM
+          <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-5 flex flex-col justify-between">
+            <div className="flex flex-col gap-5">
+              {checkoutError && (
+                <div className="p-3 bg-[#D12052]/10 border-2 border-[#D12052] text-[#D12052] text-xs font-bold rounded-xl">
+                  ⚠️ {checkoutError}
+                </div>
+              )}
+
+              {/* Delivery Details */}
+              <div className="flex flex-col gap-3.5">
+                <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Thông Tin Nhận Hàng</h5>
+                
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Họ và tên người nhận</label>
+                  <input
+                    type="text"
+                    required
+                    value={shippingName}
+                    onChange={(e) => setShippingName(e.target.value)}
+                    placeholder="Nguyễn Văn A"
+                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Số điện thoại</label>
+                  <input
+                    type="tel"
+                    required
+                    value={shippingPhone}
+                    onChange={(e) => setShippingPhone(e.target.value)}
+                    placeholder="09XXXXXXXX"
+                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Địa chỉ nhận hàng</label>
+                  <textarea
+                    required
+                    rows={2}
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(e.target.value)}
+                    placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
+                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa] resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Payment selection */}
+              <div className="flex flex-col gap-2">
+                <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Thanh Toán</h5>
+                <div className="grid grid-cols-2 gap-2">
+                  <div
+                    onClick={() => setPaymentMethod("COD")}
+                    className={`border-2 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer transition-all ${
+                      paymentMethod === "COD" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
+                    }`}
+                  >
+                    <input type="radio" checked={paymentMethod === "COD"} readOnly className="accent-[#03AED2]" />
+                    <span className="text-[10px] uppercase tracking-wider">COD</span>
+                  </div>
+                  <div
+                    onClick={() => setPaymentMethod("MOMO")}
+                    className={`border-2 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer transition-all ${
+                      paymentMethod === "MOMO" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
+                    }`}
+                  >
+                    <input type="radio" checked={paymentMethod === "MOMO"} readOnly className="accent-[#03AED2]" />
+                    <span className="text-[10px] uppercase tracking-wider">MoMo</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bill Details */}
+              <div className="border-t border-[#111111]/10 pt-4 flex flex-col gap-2">
+                <div className="flex justify-between text-xs font-bold text-gray-500">
+                  <span>Tiền sản phẩm:</span>
+                  <span>{cartTotal.toLocaleString("vi-VN")}đ</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-gray-500">
+                  <span>Phí vận chuyển:</span>
+                  <span>30.000đ</span>
+                </div>
+                <div className="flex justify-between text-sm font-extrabold text-[#111111] border-t border-[#111111] pt-2">
+                  <span>TỔNG THANH TOÁN:</span>
+                  <span>{(cartTotal + 30000).toLocaleString("vi-VN")}đ</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setStep("cart")}
+                className="flex-1 py-3 border-2 border-[#111111] text-[#111111] font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-neutral-50 cursor-pointer text-center"
+              >
+                Quay lại giỏ
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 py-3 bg-[#D12052] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[3px_3px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  "Đặt Hàng"
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -12,6 +12,8 @@ interface OrdersTableProps {
   onStatusFilterChange: (status: string) => void;
   onStatusUpdate: (orderId: string, status: string) => void;
   onPageChange: (page: number) => void;
+  onEditClick: (order: Order) => void;
+  onDeleteClick: (orderId: string) => void;
 }
 
 export default function OrdersTable({
@@ -24,6 +26,8 @@ export default function OrdersTable({
   onStatusFilterChange,
   onStatusUpdate,
   onPageChange,
+  onEditClick,
+  onDeleteClick,
 }: OrdersTableProps) {
   return (
     <div className="bg-white border-2 border-[#111111] rounded-2xl shadow-[4px_4px_0px_#111111] overflow-hidden">
@@ -60,7 +64,7 @@ export default function OrdersTable({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[#111111]/10">
-                  {["Mã ĐH", "Khách Hàng", "Sản Phẩm", "Tổng Tiền", "Ngày", "Trạng Thái", "Cập Nhật"].map((h) => (
+                  {["Mã ĐH", "Khách Hàng", "Sản Phẩm", "Tổng Tiền", "Ngày", "Trạng Thái", "Cập Nhật", "Hành Động"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] font-extrabold uppercase tracking-widest text-[#aaa]">
                       {h}
                     </th>
@@ -117,6 +121,26 @@ export default function OrdersTable({
                           ))}
                         </select>
                       </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <button
+                          onClick={() => onEditClick(order)}
+                          className="bg-[#03AED2] text-white border-2 border-[#111111] p-1.5 rounded-lg cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-[1.5px_1.5px_0px_#111111] mr-2"
+                          title="Xem / Sửa"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 13.5-13.5z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => onDeleteClick(order.id)}
+                          className="bg-[#D12052] text-white border-2 border-[#111111] p-1.5 rounded-lg cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-[1.5px_1.5px_0px_#111111]"
+                          title="Xoá đơn"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                          </svg>
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -129,3 +153,4 @@ export default function OrdersTable({
     </div>
   );
 }
+

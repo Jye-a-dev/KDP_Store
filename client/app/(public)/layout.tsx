@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import PublicSetup from "@/components/layouts/(public)/PublicSetup";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PageContentProvider } from "@/contexts/PageContentContext";
+import { CartProvider } from "@/contexts/CartContext";
 
 import "../globals.css";
 
@@ -21,12 +22,15 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
     <html lang="vi">
       <body className="min-h-screen bg-white text-[#111111] antialiased">
         <AuthProvider>
-          <PageContentProvider>
-            <PublicSetup>{children}</PublicSetup>
-          </PageContentProvider>
+          <CartProvider>
+            <PageContentProvider>
+              <PublicSetup>{children}</PublicSetup>
+            </PageContentProvider>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>
   );
 }
+
 

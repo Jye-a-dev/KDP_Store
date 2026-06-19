@@ -1,15 +1,21 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 
 import PublicFooter from "@/components/layouts/(public)/Footer/PublicFooter";
 import PublicNavbar from "@/components/layouts/(public)/Navbar/PublicNavbar";
 import EditableText from "@/components/layouts/(public)/EditableText";
+import CartDrawer from "./CartDrawer";
+import { useCart } from "@/contexts/CartContext";
 
 type PublicSetupProps = {
   children: ReactNode;
 };
 
 export default function PublicSetup({ children }: PublicSetupProps) {
+  const { setIsCartOpen, cartCount } = useCart();
+
   return (
     <div className="flex flex-col min-h-screen w-full relative pb-16.25 md:pb-0 bg-white">
       {/* Top Announcement Bar */}
@@ -23,6 +29,9 @@ export default function PublicSetup({ children }: PublicSetupProps) {
       <main className="flex-1 w-full flex flex-col">{children}</main>
 
       <PublicFooter />
+
+      {/* Cart Drawer */}
+      <CartDrawer />
 
       {/* Mobile Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 h-16.25 bg-white border-t-2 border-[#111111] flex md:hidden justify-around items-center z-50">
@@ -38,16 +47,22 @@ export default function PublicSetup({ children }: PublicSetupProps) {
           </svg>
           <span>Tìm Kiếm</span>
         </Link>
-        <Link href="/login" className="flex flex-col items-center gap-1 text-[10px] font-bold uppercase text-[#111111] relative">
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="flex flex-col items-center gap-1 text-[10px] font-bold uppercase text-[#111111] relative cursor-pointer bg-transparent border-0"
+        >
           <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
           </svg>
-          <span className="absolute -top-1 right-2 w-4.5 h-4.5 bg-[#F45B26] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-            2
-          </span>
+          {cartCount > 0 && (
+            <span className="absolute -top-1 right-2 w-4.5 h-4.5 bg-[#F45B26] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
+              {cartCount}
+            </span>
+          )}
           <span>Giỏ Hàng</span>
-        </Link>
+        </button>
       </div>
     </div>
   );
 }
+

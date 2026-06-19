@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 
 interface Product {
   id: number;
@@ -34,9 +35,40 @@ export default function ProductCard({
   onEdit,
   onDelete,
 }: ProductCardProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { addToCart } = useCart();
   const router = useRouter();
   const [successMsg, setSuccessMsg] = useState("");
+  const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      const wishlist = JSON.parse(localStorage.getItem(`kdp_wishlist_${user.id}`) || "[]") as number[];
+      setIsLiked(wishlist.includes(product.id));
+    }
+  }, [user?.id, product.id]);
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
+    }
+    const key = `kdp_wishlist_${user.id}`;
+    let wishlist = JSON.parse(localStorage.getItem(key) || "[]") as number[];
+    if (wishlist.includes(product.id)) {
+      wishlist = wishlist.filter(id => id !== product.id);
+      setIsLiked(false);
+      setSuccessMsg("💔 Đã xóa khỏi danh sách yêu thích");
+    } else {
+      wishlist.push(product.id);
+      setIsLiked(true);
+      setSuccessMsg("❤️ Đã thêm vào danh sách yêu thích!");
+    }
+    localStorage.setItem(key, JSON.stringify(wishlist));
+    setTimeout(() => setSuccessMsg(""), 2000);
+  };
 
   const getProductImage = (images2d: string[] | string) => {
     if (Array.isArray(images2d)) {
@@ -81,6 +113,16 @@ export default function ProductCard({
       router.push("/login");
       return;
     }
+    
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: priceVal,
+      color: isFurniture ? "#8B5A2B" : "#03AED2",
+      image: imageUrl || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80",
+      slug: product.slug,
+    }, 1);
+
     setSuccessMsg("🎉 Đã thêm vào giỏ hàng!");
     setTimeout(() => {
       setSuccessMsg("");
@@ -138,13 +180,12 @@ export default function ProductCard({
           </div>
         ) : (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm border border-transparent shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-[#D12052] hover:border-[#D12052] hover:text-white hover:scale-110 active:scale-95 z-10"
+            onClick={handleWishlistToggle}
+            className={`absolute top-3 right-3 bg-white/90 backdrop-blur-sm border shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 z-10 ${
+              isLiked ? "text-[#D12052] border-[#D12052] bg-[#D12052]/10" : "text-gray-500 border-transparent hover:bg-[#D12052] hover:border-[#D12052] hover:text-white"
+            }`}
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
             </svg>
           </button>

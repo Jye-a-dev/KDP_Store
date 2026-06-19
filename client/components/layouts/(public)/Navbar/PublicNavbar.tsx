@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 
 export default function PublicNavbar() {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { setIsCartOpen, cartCount } = useCart();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -56,15 +58,20 @@ export default function PublicNavbar() {
         {/* Right Actions */}
         <div className="flex items-center gap-3">
           {!isLoading && (
-            <Link
-              href={isAuthenticated ? "/dashboard/customer/orders" : "/login"}
-              className="bg-white text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all hover:bg-[#F8DE22] hover:scale-105 active:scale-95"
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="bg-white text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all hover:bg-[#F8DE22] hover:scale-105 active:scale-95 relative"
               title="Giỏ Hàng"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
               </svg>
-            </Link>
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-[#F45B26] text-white text-[9px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                  {cartCount}
+                </span>
+              )}
+            </button>
           )}
 
           {isLoading ? (

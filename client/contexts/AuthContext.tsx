@@ -33,6 +33,7 @@ interface AuthContextValue {
   ) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  updateProfile: (updatedUser: Partial<AuthUser>) => void;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -139,6 +140,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     _clear();
   }, []);
 
+  const updateProfile = useCallback((updatedUser: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const newUser = { ...prev, ...updatedUser };
+      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+      return newUser;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -149,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         isAuthenticated: !!token && !!user,
+        updateProfile,
       }}
     >
       {children}

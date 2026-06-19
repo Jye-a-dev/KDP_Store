@@ -27,15 +27,21 @@ export function useOrders() {
   }, [token]);
 
   const fetchCustomerOrders = useCallback(
-    async (userId: string) => {
+    async (userId: string, params: OrderQueryParams = {}) => {
       setIsLoading(true);
       setError(null);
       try {
         const headers = getHeaders();
+        const query = new URLSearchParams();
+        query.set("user_id", userId);
+        query.set("limit", String(params.limit ?? 100));
+        query.set("sort_by", params.sort_by ?? "created_at");
+        query.set("sort_order", params.sort_order ?? "DESC");
+        if (params.order_status) query.set("order_status", params.order_status);
 
         const [ordersRes, statsRes] = await Promise.all([
           fetch(
-            `${API_URL}/orders?user_id=${userId}&limit=5&sort_by=created_at&sort_order=DESC`,
+            `${API_URL}/orders?${query.toString()}`,
             { headers }
           ),
           fetch(`${API_URL}/orders/count?user_id=${userId}`, { headers }),
@@ -149,6 +155,49 @@ export function useOrders() {
     [token, getHeaders]
   );
 
+  const updateOrder = useCallback(
+    async (id: string, data: Record<string, unknown>) => {
+      if (!token) throw new Error("Unauthorized");
+      setError(null);
+      try {
+        const res = await fetch(`${API_URL}/orders/${id}`, {
+          method: "PATCH",
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          const body = (await res.json()) as { message?: string };
+          throw new Error(body.message ?? "Failed to update order");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+        throw err;
+      }
+    },
+    [token, getHeaders]
+  );
+
+  const deleteOrder = useCallback(
+    async (id: string) => {
+      if (!token) throw new Error("Unauthorized");
+      setError(null);
+      try {
+        const res = await fetch(`${API_URL}/orders/${id}`, {
+          method: "DELETE",
+          headers: getHeaders(),
+        });
+        if (!res.ok) {
+          const body = (await res.json()) as { message?: string };
+          throw new Error(body.message ?? "Failed to delete order");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+        throw err;
+      }
+    },
+    [token, getHeaders]
+  );
+
   return {
     orders,
     orderStats,
@@ -160,5 +209,8 @@ export function useOrders() {
     fetchOrdersList,
     fetchOrderStats,
     updateOrderStatus,
+    updateOrder,
+    deleteOrder,
   };
 }
+

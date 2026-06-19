@@ -285,6 +285,24 @@ export class OrdersService {
       idx++;
     }
 
+    if (dto.shipping_name !== undefined) {
+      fields.push(`shipping_name = $${idx}`);
+      params.push(dto.shipping_name);
+      idx++;
+    }
+
+    if (dto.shipping_phone !== undefined) {
+      fields.push(`shipping_phone = $${idx}`);
+      params.push(dto.shipping_phone);
+      idx++;
+    }
+
+    if (dto.shipping_address !== undefined) {
+      fields.push(`shipping_address = $${idx}`);
+      params.push(dto.shipping_address);
+      idx++;
+    }
+
     if (fields.length === 0) return this.findOne(id);
 
     fields.push(`updated_at = NOW()`);

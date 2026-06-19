@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Product } from "@/types/api";
 
 interface ProductDetailModalProps {
@@ -14,8 +17,12 @@ export default function ProductDetailModal({
   getCategoryName,
   onClose,
 }: ProductDetailModalProps) {
+  const router = useRouter();
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+
   const [activeTab, setActiveTab] = useState<"2d" | "3d">("2d");
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedColor, setSelectedColor] = useState("#D12052");
   const [quantity, setQuantity] = useState(1);
   const [successMsg, setSuccessMsg] = useState("");
 
@@ -55,6 +62,20 @@ export default function ProductDetailModal({
   const [mainImage, setMainImage] = useState(images[0] || "");
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      onClose();
+      router.push("/login");
+      return;
+    }
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: Math.round(Number(product.price)),
+      color: selectedColor || "Mặc định",
+      image: mainImage || images[0],
+      slug: product.slug,
+    }, quantity);
+
     setSuccessMsg("🎉 Đã thêm sản phẩm vào giỏ hàng thành công!");
     setTimeout(() => {
       setSuccessMsg("");
@@ -63,6 +84,7 @@ export default function ProductDetailModal({
 
   // Fallback 3D model if model_3d_url is empty
   const modelUrl = product.model_3d_url || "https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/SheenChair/glTF-Binary/SheenChair.glb";
+
 
   return (
     <div className="fixed inset-0 bg-[#111111]/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
