@@ -46,17 +46,45 @@ export default function ProductListContent({
     );
   }
 
+  // Group products by category name
+  const groupedProducts: Record<string, Product[]> = {};
+  products.forEach((product) => {
+    const catName = product.category_id ? getCategoryName(product.category_id) : "Sản Phẩm Khác";
+    if (!groupedProducts[catName]) {
+      groupedProducts[catName] = [];
+    }
+    groupedProducts[catName].push(product);
+  });
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-[5%] w-full">
-      {products.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          getCategoryName={getCategoryName}
-          isAdmin={isAdmin}
-          onEdit={onEditProduct}
-          onDelete={onDeleteProduct}
-        />
+    <div className="flex flex-col gap-12 w-full px-[5%]">
+      {Object.entries(groupedProducts).map(([categoryName, catProducts]) => (
+        <div key={categoryName} className="flex flex-col gap-6">
+          {/* Section Divider Header */}
+          <div className="flex items-center gap-4">
+            <h3 className="text-base md:text-lg font-extrabold uppercase tracking-wider text-[#111111] bg-[#F8DE22]/20 px-3 py-1 border-l-4 border-[#F8DE22] select-none">
+              {categoryName}
+            </h3>
+            <span className="text-[10px] text-[#777] font-extrabold uppercase tracking-widest">
+              ({catProducts.length} sản phẩm)
+            </span>
+            <div className="flex-1 h-0.5 bg-[#111111]/5" />
+          </div>
+
+          {/* Product Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
+            {catProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                getCategoryName={getCategoryName}
+                isAdmin={isAdmin}
+                onEdit={onEditProduct}
+                onDelete={onDeleteProduct}
+              />
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );

@@ -55,15 +55,31 @@ export default function PublicNavbar() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
+          {!isLoading && (
+            <Link
+              href={isAuthenticated ? "/dashboard/customer/orders" : "/login"}
+              className="bg-white text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all hover:bg-[#F8DE22] hover:scale-105 active:scale-95"
+              title="Giỏ Hàng"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              </svg>
+            </Link>
+          )}
+
           {isLoading ? (
             /* Skeleton while hydrating */
             <div className="h-9 w-28 rounded-full bg-[#111111]/10 animate-pulse" />
           ) : isAuthenticated && user ? (
             /* Logged-in state */
             <div className="flex items-center gap-3">
-              <span className="hidden sm:block font-bold uppercase text-[11px] tracking-wider text-[#555555]">
-                👋 {user.full_name.split(" ").pop()}
-              </span>
+              <Link
+                href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
+                className="hidden sm:block font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer"
+                title={user.role === "admin" ? "Vào trang quản trị Admin" : "Vào trang quản trị cá nhân"}
+              >
+                👋 {user.full_name.split(" ").pop()} {user.role === "admin" && "(Admin)"}
+              </Link>
               <button
                 id="navbar-logout-btn"
                 onClick={handleLogout}

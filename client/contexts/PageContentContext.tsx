@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 export interface PageContent {
   announcement_bar: string;
@@ -18,6 +18,7 @@ export interface PageContent {
   customer_promo_code: string;
   customer_promo_desc: string;
   customer_promo_btn: string;
+  [key: string]: string;
 }
 
 const DEFAULT_CONTENT: PageContent = {
@@ -40,44 +41,131 @@ const DEFAULT_CONTENT: PageContent = {
 
 interface PageContentContextValue {
   content: PageContent;
-  updateText: (key: keyof PageContent, value: string) => void;
+  updateText: (key: string, value: string) => Promise<void>;
+  createKey: (key: string, value: string) => Promise<void>;
+  deleteKey: (key: string) => Promise<void>;
   resetAll: () => void;
+  refresh: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const PageContentContext = createContext<PageContentContextValue | null>(null);
 
-const STORAGE_KEY = "kdp_page_content";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const TOKEN_KEY = "kdp_access_token";
 
 export function PageContentProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<PageContent>(DEFAULT_CONTENT);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load from localStorage on mount
-  useEffect(() => {
+  const fetchContent = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setContent({ ...DEFAULT_CONTENT, ...JSON.parse(stored) });
+      const res = await fetch(`${API_URL}/page-contents`);
+      if (res.ok) {
+        const data = await res.json();
+        setContent({ ...DEFAULT_CONTENT, ...data });
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("Failed to fetch page contents from API, using default/cached content", err);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const updateText = (key: keyof PageContent, value: string) => {
-    setContent((prev) => {
-      const updated = { ...prev, [key]: value };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
+  // Load from API on mount
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
+
+  const updateText = async (key: string, value: string) => {
+    // 1. Update locally for immediate responsiveness
+    setContent((prev) => ({ ...prev, [key]: value }));
+
+    // 2. Call API to persist in database
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) return;
+
+      await fetch(`${API_URL}/page-contents/${key}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ value }),
+      });
+    } catch (err) {
+      console.error("Failed to save page content key to API:", err);
+    }
+  };
+
+  const createKey = async (key: string, value: string) => {
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) throw new Error("Unauthorized");
+
+      const res = await fetch(`${API_URL}/page-contents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ key, value }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message ?? "Failed to create page content");
+      }
+      setContent((prev) => ({ ...prev, [key]: value }));
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const deleteKey = async (key: string) => {
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) throw new Error("Unauthorized");
+
+      const res = await fetch(`${API_URL}/page-contents/${key}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message ?? "Failed to delete page content");
+      }
+      setContent((prev) => {
+        const updated = { ...prev };
+        delete updated[key];
+        return updated;
+      });
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   };
 
   const resetAll = () => {
-    localStorage.removeItem(STORAGE_KEY);
     setContent(DEFAULT_CONTENT);
   };
 
   return (
-    <PageContentContext.Provider value={{ content, updateText, resetAll }}>
+    <PageContentContext.Provider
+      value={{
+        content,
+        updateText,
+        createKey,
+        deleteKey,
+        resetAll,
+        refresh: fetchContent,
+        isLoading,
+      }}
+    >
       {children}
     </PageContentContext.Provider>
   );

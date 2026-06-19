@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Product {
   id: number;
@@ -31,6 +34,10 @@ export default function ProductCard({
   onEdit,
   onDelete,
 }: ProductCardProps) {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [successMsg, setSuccessMsg] = useState("");
+
   const getProductImage = (images2d: string[] | string) => {
     if (Array.isArray(images2d)) {
       return images2d[0] || "";
@@ -45,29 +52,51 @@ export default function ProductCard({
   };
 
   const imageUrl = getProductImage(product.images_2d);
-  // 3D badge: detect by SKU prefix (FS- = furniture/3D)
-  const isFurniture = product.sku.startsWith("FS-") || product.sku.startsWith("3D-");
+  const isFurniture = !!product.model_3d_url;
   const priceVal = Math.round(Number(product.price));
 
-  // Simulated discount logic for aesthetic matching (sale badges)
   const hasDiscount = product.id % 3 === 0;
   const displayPrice = priceVal;
   const oldPrice = Math.round(priceVal * 1.25);
 
-  // Badge configs to look like the streetwear mock
-  let badgeColor = "bg-[#03AED2] text-white"; // Cyan default (New In)
+  let badgeColor = "bg-[#03AED2] text-white";
   let badgeText = "New In";
 
   if (hasDiscount) {
-    badgeColor = "bg-[#D12052] text-[#F8DE22]"; // Pink/Yellow (Sale)
+    badgeColor = "bg-[#D12052] text-[#F8DE22]";
     badgeText = "Sale -20%";
   } else if (product.id % 4 === 2) {
-    badgeColor = "bg-[#111111] text-white"; // Black (Limited)
+    badgeColor = "bg-[#111111] text-white";
     badgeText = "Limited";
   }
 
+  const handleCardClick = () => {
+    router.push(`/products/${product.slug}`);
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    setSuccessMsg("🎉 Đã thêm vào giỏ hàng!");
+    setTimeout(() => {
+      setSuccessMsg("");
+    }, 2500);
+  };
+
   return (
-    <div className="group flex flex-col bg-white text-left relative transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_15px_40px_-15px_rgba(0,0,0,0.15)] p-2 rounded-2xl">
+    <div
+      onClick={handleCardClick}
+      className="group flex flex-col bg-white text-left relative transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_15px_40px_-15px_rgba(0,0,0,0.15)] p-2 rounded-2xl cursor-pointer"
+    >
+      {successMsg && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white font-bold text-[10px] uppercase py-1.5 px-3 rounded-lg border border-black shadow-[2px_2px_0px_rgba(0,0,0,1)] z-30 animate-bounce">
+          {successMsg}
+        </div>
+      )}
       {/* Image Wrap */}
       <div className="relative aspect-3/4 w-full overflow-hidden bg-[#f7f9fa] border border-[#e8ecef] rounded-xl mb-4">
         {/* Badge */}
@@ -108,7 +137,13 @@ export default function ProductCard({
             </button>
           </div>
         ) : (
-          <button className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm border border-transparent shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-[#D12052] hover:border-[#D12052] hover:text-white hover:scale-110 active:scale-95 z-10">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm border border-transparent shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-[#D12052] hover:border-[#D12052] hover:text-white hover:scale-110 active:scale-95 z-10"
+          >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
             </svg>
@@ -126,13 +161,30 @@ export default function ProductCard({
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
         />
 
-        {/* Quick Add Hover button */}
-        <Link
-          href="/login"
-          className="absolute bottom-0 left-0 w-full bg-[#111111]/95 backdrop-blur-md text-white py-4 text-center text-[11px] font-bold uppercase tracking-[1px] translate-y-full transition-all duration-300 ease-out group-hover:translate-y-0 hover:bg-[#03AED2]! hidden md:block z-10 shadow-lg"
-        >
-          {isFurniture ? "Trải nghiệm 3D +" : "Thêm Ngay +"}
-        </Link>
+        {/* Hover Action Overlay */}
+        <div className="absolute inset-0 bg-[#111111]/45 backdrop-blur-xs flex flex-col justify-end p-4 gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+          <button
+            onClick={handleAddToCart}
+            className="w-full bg-[#F8DE22] text-[#111111] font-bold text-xs uppercase tracking-wider py-2.5 rounded-lg border-2 border-[#111111] shadow-[2px_2px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+            </svg>
+            Thêm vào giỏ hàng
+          </button>
+
+          <Link
+            href={`/products/${product.slug}`}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full bg-white text-[#111111] font-bold text-xs uppercase tracking-wider py-2.5 rounded-lg border-2 border-[#111111] shadow-[2px_2px_0px_#111111] hover:bg-neutral-50 active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all text-center flex items-center justify-center gap-1.5"
+          >
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            {isFurniture ? "Trải nghiệm 3D" : "Xem thêm"}
+          </Link>
+        </div>
       </div>
 
       {/* Product Info */}
@@ -173,6 +225,8 @@ export default function ProductCard({
           )}
         </div>
       </div>
+
+
     </div>
   );
 }

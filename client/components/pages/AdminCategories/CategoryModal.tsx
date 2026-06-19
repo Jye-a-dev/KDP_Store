@@ -58,10 +58,10 @@ export default function CategoryModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white border-2 border-[#11] rounded-2xl shadow-[8px_8px_0px_#11] w-full max-w-md">
+      <div className="bg-white border-2 border-[#111111] rounded-2xl shadow-[8px_8px_0px_#111111] w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#11]">
-          <h2 className="text-[14px] font-extrabold uppercase tracking-wider text-[#11]">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#111111]">
+          <h2 className="text-[14px] font-extrabold uppercase tracking-wider text-[#111111]">
             {mode === "create" ? "Thêm Danh Mục Mới" : "Chỉnh Sửa Danh Mục"}
           </h2>
           <button
@@ -85,26 +85,26 @@ export default function CategoryModal({
 
           {/* Tên */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#11]">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
               Tên danh mục <span className="text-[#D12052]">*</span>
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="VD: Áo Thun Oversize"
-              className="border-2 border-[#11] py-2.5 px-4 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa]"
+              className="border-2 border-[#111111] py-2.5 px-4 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa]"
             />
           </div>
 
           {/* Parent */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#11]">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
               Thuộc danh mục cha
             </label>
             <select
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
-              className="border-2 border-[#11] py-2.5 px-4 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa] bg-white cursor-pointer"
+              className="border-2 border-[#111111] py-2.5 px-4 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa] bg-white cursor-pointer"
             >
               <option value="">— Danh mục gốc —</option>
               {parentOptions.map((opt) => (
@@ -121,14 +121,14 @@ export default function CategoryModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border-2 border-[#11] text-[12px] font-extrabold uppercase hover:bg-[#f7f9fa] transition-all cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl border-2 border-[#111111] text-[12px] font-extrabold uppercase hover:bg-[#f7f9fa] transition-all cursor-pointer"
             >
               Huỷ
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 rounded-xl bg-[#11] text-white border-2 border-[#11] text-[12px] font-extrabold uppercase hover:bg-[#F8DE22] hover:text-[#11] transition-all cursor-pointer shadow-[3px_3px_0px_#D12052] disabled:opacity-60"
+              className="flex-1 py-2.5 rounded-xl bg-[#111111] text-white border-2 border-[#111111] text-[12px] font-extrabold uppercase hover:bg-[#F8DE22] hover:text-[#111111] transition-all cursor-pointer shadow-[3px_3px_0px_#D12052] disabled:opacity-60"
             >
               {loading ? "Đang lưu..." : mode === "create" ? "Tạo Mới" : "Lưu Lại"}
             </button>

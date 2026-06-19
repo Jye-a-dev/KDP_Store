@@ -91,6 +91,17 @@ export class ProductsController {
     return this.productsService.findOne(id);
   }
 
+  @Get('slug/:slug')
+  @ApiOperation({ summary: 'Lấy thông tin chi tiết một sản phẩm theo slug' })
+  @ApiOkResponse({
+    description: 'Trả về chi tiết sản phẩm.',
+    type: ProductResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Không tìm thấy sản phẩm.' })
+  findBySlug(@Param('slug') slug: string) {
+    return this.productsService.findBySlug(slug);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Cập nhật thông tin sản phẩm 3D' })
   @ApiOkResponse({

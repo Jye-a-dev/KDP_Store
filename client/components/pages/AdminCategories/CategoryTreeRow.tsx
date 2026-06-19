@@ -19,7 +19,7 @@ export default function CategoryTreeRow({
 
   return (
     <>
-      <tr className="border-b border-[#11]/5 hover:bg-[#f7f9fa] transition-colors group">
+      <tr className="border-b border-[#111111]/5 hover:bg-[#f7f9fa] transition-colors group">
         <td className="px-4 py-3">
           <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 20}px` }}>
             {hasChildren ? (

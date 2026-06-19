@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePageContent, PageContent } from "@/contexts/PageContentContext";
 
 interface EditableTextProps {
-  contentKey: keyof PageContent;
+  contentKey: keyof PageContent & string;
   element?: "span" | "div" | "h1" | "h2" | "h3" | "p" | "mark";
   className?: string;
   multiline?: boolean;

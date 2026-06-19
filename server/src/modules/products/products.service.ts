@@ -213,6 +213,17 @@ export class ProductsService {
     return rows[0];
   }
 
+  async findBySlug(slug: string): Promise<Product> {
+    const { rows } = await this.db.query<Product>(
+      'SELECT * FROM products WHERE slug = $1',
+      [slug],
+    );
+    if (!rows[0]) {
+      throw new NotFoundException(`Sản phẩm với slug "${slug}" không tồn tại`);
+    }
+    return rows[0];
+  }
+
   // ─────────────────────────────────────────────
   // UPDATE
   // ─────────────────────────────────────────────
