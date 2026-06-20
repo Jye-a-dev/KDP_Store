@@ -50,8 +50,23 @@ export default function DashboardSidebar({
       {/* User info */}
       <div className={`px-6 py-4 border-b ${isAdmin ? "border-white/10" : "border-[#111111]/10"}`}>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold uppercase border-2 ${isAdmin ? "bg-[#F8DE22] text-[#111111] border-[#F8DE22]" : "bg-[#D12052] text-white border-[#D12052]"}`}>
-            {user.full_name.charAt(0)}
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 shrink-0 ${
+            isAdmin ? "border-[#F8DE22]" : "border-[#111111]/20 bg-white"
+          }`}>
+            {user.avatar_url ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img 
+                src={user.avatar_url} 
+                alt={user.full_name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className={`w-full h-full flex items-center justify-center text-sm font-extrabold uppercase ${
+                isAdmin ? "bg-[#F8DE22] text-[#111111]" : "bg-[#D12052] text-white"
+              }`}>
+                {user.full_name.charAt(0)}
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-xs font-extrabold uppercase truncate ${sidebarText}`}>{user.full_name}</p>

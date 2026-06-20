@@ -27,6 +27,10 @@ export default function AdminProducts() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [publishedFilter, setPublishedFilter] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [viewMode, setViewMode] = useState<"table" | "grouped">("table");
+  const [sortBy, setSortBy] = useState<"created_at" | "name" | "price" | "stock">("created_at");
+  const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC");
   const [page, setPage] = useState(1);
 
   const [productModal, setProductModal] = useState<{
@@ -54,11 +58,14 @@ export default function AdminProducts() {
   const loadProducts = useCallback(() => {
     fetchAdminProducts({
       page,
-      limit: 10,
+      limit: viewMode === "grouped" ? 100 : 10,
       search: debouncedSearch,
       is_published: publishedFilter === "" ? undefined : publishedFilter === "true",
+      category_id: selectedCategory === "" ? undefined : Number(selectedCategory),
+      sort_by: sortBy,
+      sort_order: sortOrder,
     });
-  }, [fetchAdminProducts, page, debouncedSearch, publishedFilter]);
+  }, [fetchAdminProducts, page, debouncedSearch, publishedFilter, selectedCategory, sortBy, sortOrder, viewMode]);
 
   useEffect(() => {
     loadProducts();
@@ -76,6 +83,16 @@ export default function AdminProducts() {
     }
   };
 
+  const handleSortChange = (field: "created_at" | "name" | "price" | "stock") => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "ASC" ? "DESC" : "ASC");
+    } else {
+      setSortBy(field);
+      setSortOrder("DESC");
+    }
+    setPage(1);
+  };
+
   return (
     <div className="max-w-6xl mx-auto pb-24 md:pb-8">
       <ProductsHeader
@@ -89,11 +106,18 @@ export default function AdminProducts() {
         isLoading={isLoading}
         search={search}
         publishedFilter={publishedFilter}
+        selectedCategory={selectedCategory}
+        viewMode={viewMode}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
         page={pagination.page}
         totalPages={pagination.total_pages}
         total={pagination.total}
         onSearchChange={(v) => { setSearch(v); setPage(1); }}
         onPublishedFilterChange={(v) => { setPublishedFilter(v); setPage(1); }}
+        onSelectedCategoryChange={(v) => { setSelectedCategory(v); setPage(1); }}
+        onViewModeChange={(mode) => { setViewMode(mode); setPage(1); }}
+        onSortChange={handleSortChange}
         onEdit={(p) => setProductModal({ open: true, mode: "edit", product: p })}
         onDelete={(id, name) => setDeleteConfirm({ open: true, id, name })}
         onPageChange={setPage}

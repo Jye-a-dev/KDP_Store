@@ -19,6 +19,7 @@ interface UserRow {
   role: string;
   is_active: boolean;
   password_hash: string | null;
+  addresses?: unknown;
 }
 
 @Injectable()
@@ -46,7 +47,7 @@ export class AuthService {
     const { rows } = await this.db.query<UserRow>(
       `INSERT INTO users (email, password_hash, full_name, phone, role, is_active, addresses)
        VALUES ($1, $2, $3, $4, 'customer', true, '[]')
-       RETURNING id, email, full_name, phone, avatar_url, role, is_active`,
+       RETURNING id, email, full_name, phone, avatar_url, role, is_active, addresses`,
       [dto.email, password_hash, dto.full_name, dto.phone ?? null],
     );
 
@@ -58,7 +59,7 @@ export class AuthService {
   async login(dto: LoginDto): Promise<AuthResponseDto> {
     // 1. Find user by email
     const { rows } = await this.db.query<UserRow>(
-      'SELECT id, email, full_name, phone, avatar_url, role, is_active, password_hash FROM users WHERE email = $1',
+      'SELECT id, email, full_name, phone, avatar_url, role, is_active, addresses, password_hash FROM users WHERE email = $1',
       [dto.email],
     );
 
@@ -101,6 +102,7 @@ export class AuthService {
         avatar_url: user.avatar_url ?? undefined,
         role: user.role,
         is_active: user.is_active,
+        addresses: (user.addresses as any[]) ?? [],
       },
     };
   }

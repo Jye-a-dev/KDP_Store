@@ -12,6 +12,7 @@ interface CustomersTableProps {
   total: number;
   onSearchChange: (value: string) => void;
   onActiveFilterChange: (value: string) => void;
+  onViewDetails: (user: User) => void;
   onEdit: (user: User) => void;
   onDelete: (id: string, name: string) => void;
   onPageChange: (page: number) => void;
@@ -27,6 +28,7 @@ export default function CustomersTable({
   total,
   onSearchChange,
   onActiveFilterChange,
+  onViewDetails,
   onEdit,
   onDelete,
   onPageChange,
@@ -93,8 +95,18 @@ export default function CustomersTable({
                   >
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#F8DE22] border-2 border-[#111111] flex items-center justify-center text-sm font-extrabold shrink-0">
-                          {user.full_name.charAt(0).toUpperCase()}
+                        <div className="w-9 h-9 rounded-xl bg-white border-2 border-[#111111] overflow-hidden flex items-center justify-center shrink-0 shadow-[1px_1px_0px_#111111]">
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.full_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm font-extrabold text-[#111111]">
+                              {user.full_name.charAt(0).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[12px] font-extrabold text-[#111111]">{user.full_name}</p>
                       </div>
@@ -119,15 +131,22 @@ export default function CustomersTable({
                       <div className="flex gap-2">
                         <button
                           type="button"
+                          onClick={() => onViewDetails(user)}
+                          className="px-2.5 py-1 bg-[#03AED2] text-white border-2 border-[#111111] rounded-lg text-[10px] font-extrabold uppercase cursor-pointer shadow-[1px_1px_0px_#111111] hover:bg-[#0295b3] transition-colors"
+                        >
+                          Chi Tiết
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => onEdit(user)}
-                          className="px-2.5 py-1 bg-[#F8DE22] border-2 border-[#111111] rounded-lg text-[10px] font-extrabold uppercase cursor-pointer shadow-[1px_1px_0px_#111111]"
+                          className="px-2.5 py-1 bg-[#F8DE22] border-2 border-[#111111] rounded-lg text-[10px] font-extrabold uppercase cursor-pointer shadow-[1px_1px_0px_#111111] hover:bg-[#e6c51f] transition-colors"
                         >
                           Sửa
                         </button>
                         <button
                           type="button"
                           onClick={() => onDelete(user.id, user.full_name)}
-                          className="px-2.5 py-1 bg-[#D12052] text-white border-2 border-[#111111] rounded-lg text-[10px] font-extrabold uppercase cursor-pointer shadow-[1px_1px_0px_#111111]"
+                          className="px-2.5 py-1 bg-[#D12052] text-white border-2 border-[#111111] rounded-lg text-[10px] font-extrabold uppercase cursor-pointer shadow-[1px_1px_0px_#111111] hover:bg-[#b0163f] transition-colors"
                         >
                           Xóa
                         </button>

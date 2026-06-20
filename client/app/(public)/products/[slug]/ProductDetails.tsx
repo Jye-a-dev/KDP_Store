@@ -140,6 +140,28 @@ export default function ProductDetails({
           })()}
         </div>
 
+        {/* Secondhand Product Spec Badges */}
+        <div className="flex flex-wrap gap-2.5 mt-3 p-4 bg-neutral-50 border-2 border-[#111111] rounded-2xl shadow-[3px_3px_0px_#111111]">
+          <div className="flex-1 min-w-25">
+            <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Độ mới</p>
+            <p className="text-xs font-black text-[#D12052] mt-0.5">{product.condition ?? "Mới 95%"}</p>
+          </div>
+          <div className="w-px bg-[#111111]/15 self-stretch my-1" />
+          <div className="flex-1 min-w-25">
+            <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Giá gốc hãng</p>
+            <p className="text-xs font-black text-neutral-500 mt-0.5 line-through decoration-red-500/80 decoration-1.5">
+              {product.original_price ? `${Math.round(Number(product.original_price)).toLocaleString("vi-VN")}đ` : "Chưa cập nhật"}
+            </p>
+          </div>
+          <div className="w-px bg-[#111111]/15 self-stretch my-1" />
+          <div className="flex-1 min-w-25">
+            <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Ngày nhập hàng</p>
+            <p className="text-xs font-black text-[#111111] mt-0.5">
+              {product.import_date ? new Date(product.import_date).toLocaleDateString("vi-VN") : "Hôm nay"}
+            </p>
+          </div>
+        </div>
+
         {/* Description */}
         <div className="border-t border-b border-gray-100 py-4 my-2">
           <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-2">
@@ -182,23 +204,29 @@ export default function ProductDetails({
             <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-2.5">
               Số lượng
             </h4>
-            <div className="inline-flex items-center border-2 border-[#111111] rounded-xl overflow-hidden shadow-[2px_2px_0px_#111111] bg-white">
-              <button
-                onClick={() => setQuantity((q) => Math.max(q - 1, 1))}
-                className="px-3.5 py-1.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-sm"
-              >
-                -
-              </button>
-              <span className="px-5 py-1.5 text-xs font-extrabold font-mono border-l-2 border-r-2 border-[#111111]">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="px-3.5 py-1.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-sm"
-              >
-                +
-              </button>
-            </div>
+            {product.stock <= 1 ? (
+              <div className="inline-flex items-center bg-[#f7f9fa] px-4 py-2.5 rounded-xl border-2 border-[#111111] text-xs font-extrabold text-[#555] shadow-[2px_2px_0px_#111111]">
+                Duy nhất 1 sản phẩm
+              </div>
+            ) : (
+              <div className="inline-flex items-center border-2 border-[#111111] rounded-xl overflow-hidden shadow-[2px_2px_0px_#111111] bg-white">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(q - 1, 1))}
+                  className="px-3.5 py-1.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-sm"
+                >
+                  -
+                </button>
+                <span className="px-5 py-1.5 text-xs font-extrabold font-mono border-l-2 border-r-2 border-[#111111]">
+                  {quantity}
+                </span>
+                <button
+                  onClick={() => setQuantity((q) => Math.min(q + 1, product.stock))}
+                  className="px-3.5 py-1.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-sm"
+                >
+                  +
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

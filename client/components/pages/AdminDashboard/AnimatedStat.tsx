@@ -24,3 +24,4 @@ export default function AnimatedStat({ stat, index }: AnimatedStatProps) {
     </div>
   );
 }
+1

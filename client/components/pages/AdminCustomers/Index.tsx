@@ -26,7 +26,10 @@ export default function AdminCustomers() {
   const [activeFilter, setActiveFilter] = useState("");
   const [page, setPage] = useState(1);
 
-  const [editUser, setEditUser] = useState<User | null>(null);
+  const [activeUser, setActiveUser] = useState<{
+    user: User;
+    mode: "details" | "edit";
+  } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
     id?: string;
@@ -82,18 +85,20 @@ export default function AdminCustomers() {
         total={pagination.total}
         onSearchChange={(v) => { setSearch(v); setPage(1); }}
         onActiveFilterChange={(v) => { setActiveFilter(v); setPage(1); }}
-        onEdit={setEditUser}
+        onViewDetails={(u) => setActiveUser({ user: u, mode: "details" })}
+        onEdit={(u) => setActiveUser({ user: u, mode: "edit" })}
         onDelete={(id, name) => setDeleteConfirm({ open: true, id, name })}
         onPageChange={setPage}
       />
 
-      {editUser && (
+      {activeUser && (
         <CustomerModal
-          user={editUser}
-          onClose={() => setEditUser(null)}
+          user={activeUser.user}
+          initialMode={activeUser.mode}
+          onClose={() => setActiveUser(null)}
           onUpdate={updateUser}
           onSaved={() => {
-            setEditUser(null);
+            setActiveUser(null);
             loadUsers();
             fetchUserStats();
           }}

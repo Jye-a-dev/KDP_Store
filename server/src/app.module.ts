@@ -13,6 +13,7 @@ import { CartsModule } from './modules/carts/carts.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { PageContentsModule } from './modules/page-contents/page-contents.module';
+import { StaticPagesModule } from './modules/static-pages/static-pages.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PageContentsModule } from './modules/page-contents/page-contents.module
     OrdersModule,
     ReviewsModule,
     PageContentsModule,
+    StaticPagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

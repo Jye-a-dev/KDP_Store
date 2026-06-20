@@ -238,23 +238,29 @@ export default function ProductDetailModal({
                 <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-2">
                   Số lượng
                 </h4>
-                <div className="inline-flex items-center border-2 border-[#111111] rounded-xl overflow-hidden shadow-[2px_2px_0px_#111111] bg-white">
-                  <button
-                    onClick={() => setQuantity(q => Math.max(q - 1, 1))}
-                    className="px-3 py-1 bg-white font-bold hover:bg-gray-100 cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-1 text-xs font-extrabold font-mono border-l-2 border-r-2 border-[#111111]">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(q => q + 1)}
-                    className="px-3 py-1 bg-white font-bold hover:bg-gray-100 cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
+                {product.stock <= 1 ? (
+                  <div className="inline-flex items-center bg-[#f7f9fa] px-3.5 py-1.5 rounded-xl border-2 border-[#111111] text-xs font-extrabold text-[#555] shadow-[2px_2px_0px_#111111]">
+                    Duy nhất 1 sản phẩm
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center border-2 border-[#111111] rounded-xl overflow-hidden shadow-[2px_2px_0px_#111111] bg-white">
+                    <button
+                      onClick={() => setQuantity(q => Math.max(q - 1, 1))}
+                      className="px-3 py-1 bg-white font-bold hover:bg-gray-100 cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="px-4 py-1 text-xs font-extrabold font-mono border-l-2 border-r-2 border-[#111111]">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => setQuantity(q => Math.min(q + 1, product.stock))}
+                      className="px-3 py-1 bg-white font-bold hover:bg-gray-100 cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

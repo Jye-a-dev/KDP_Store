@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { PG_CONNECTION } from '../../database/pg.provider';
@@ -32,8 +33,23 @@ interface FakeProduct {
 }
 
 @Injectable()
-export class ProductsService {
+export class ProductsService implements OnModuleInit {
   constructor(@Inject(PG_CONNECTION) private readonly db: Pool) {}
+
+  async onModuleInit() {
+    try {
+      await this.db.query(`
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS condition VARCHAR(100) DEFAULT 'Mới 95%';
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS import_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS original_price DECIMAL(12, 2);
+      `);
+    } catch (err) {
+      console.error(
+        'Error migrating products table for secondhand fields:',
+        err,
+      );
+    }
+  }
 
   private slugify(text: string): string {
     return text
@@ -90,9 +106,9 @@ export class ProductsService {
       `INSERT INTO products (
          category_id, name, slug, sku, price, discount_price, description, stock, is_published,
          images_2d, model_3d_url, badge, scale_x, scale_y, scale_z, rotation_x, rotation_y, rotation_z,
-         materials_config, camera_config
+         materials_config, camera_config, original_price, condition, import_date
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
        RETURNING *`,
       [
         dto.category_id ?? null,
@@ -115,6 +131,9 @@ export class ProductsService {
         dto.rotation_z ?? 0.0,
         JSON.stringify(dto.materials_config ?? { colors: [], textures: [] }),
         JSON.stringify(dto.camera_config ?? { alpha: 0, beta: 1, radius: 5 }),
+        dto.original_price ?? null,
+        dto.condition ?? 'Mới 95%',
+        dto.import_date ?? new Date(),
       ],
     );
 
@@ -297,6 +316,9 @@ export class ProductsService {
       'rotation_z',
       'materials_config',
       'camera_config',
+      'original_price',
+      'condition',
+      'import_date',
     ];
 
     for (const key of allowed) {

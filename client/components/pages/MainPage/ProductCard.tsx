@@ -14,6 +14,8 @@ interface Product {
   sku: string;
   price: string;
   discount_price?: string | number | null;
+  original_price?: string | number | null;
+  condition?: string;
   description: string;
   stock: number;
   images_2d: string[] | string;
@@ -187,6 +189,13 @@ export default function ProductCard({
         {badgeText && (
           <span className={`absolute top-3 left-3 px-3 py-1.5 text-[10px] uppercase font-bold tracking-wide z-10 shadow-md rounded-lg ${badgeColor}`}>
             {badgeText}
+          </span>
+        )}
+
+        {/* Condition Badge */}
+        {product.condition && (
+          <span className="absolute bottom-3 left-3 px-2 py-1.5 text-[9px] uppercase font-black tracking-wider z-10 bg-white border-2 border-[#111111] text-[#111111] rounded-lg shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+            ✨ {product.condition}
           </span>
         )}
 

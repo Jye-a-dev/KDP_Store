@@ -16,6 +16,12 @@ export default function AdminPageContents() {
   const [list, setList] = useState<ContentItem[]>([]);
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState<string>("all");
+  
+  // Track which rows are expanded for viewing long texts
+  const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
+  
+  // Clipboard copy status feedback
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const [modal, setModal] = useState<{
     open: boolean;
@@ -108,6 +114,16 @@ export default function AdminPageContents() {
     }
   };
 
+  const copyToClipboard = (key: string) => {
+    navigator.clipboard.writeText(key);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 1500);
+  };
+
+  const toggleExpand = (key: string) => {
+    setExpandedKeys(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const getGroup = (key: string) => {
     if (key.startsWith("announcement_")) return "announcement";
     if (key.startsWith("hero_")) return "hero";
@@ -133,150 +149,271 @@ export default function AdminPageContents() {
     return matchesSearch && matchesGroup;
   });
 
+  // Calculate counts for badges
+  const getGroupCount = (group: string) => {
+    if (group === "all") return list.length;
+    return list.filter(item => getGroup(item.key) === group).length;
+  };
+
   return (
-    <div className="max-w-5xl mx-auto pb-24 md:pb-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="max-w-6xl mx-auto pb-24 md:pb-8 px-4 sm:px-6">
+      {/* Header section with modern layout */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b-4 border-[#111111] pb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#111111] uppercase tracking-wide">
-            Cấu hình Giao Diện
-          </h1>
-          <p className="text-xs text-[#555] font-semibold mt-1">
-            Quản lý và cập nhật toàn bộ sao chép (copy) của trang chủ và layout công khai.
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-[#F8DE22] border-2 border-[#111111] rounded-xl shadow-[2px_2px_0px_#111111]">
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="text-[#111111]">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#111111] uppercase tracking-tight">
+              Cấu hình Giao Diện
+            </h1>
+          </div>
+          <p className="text-sm text-[#444] font-medium mt-2 max-w-xl">
+            Quản lý và cập nhật các chuỗi văn bản hiển thị trên trang chủ, biểu ngữ thông báo và các chiến dịch khuyến mãi công khai.
           </p>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="px-4 py-2.5 bg-[#F8DE22] text-[#111111] font-bold text-xs uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[3px_3px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-2"
+          className="w-full md:w-auto px-5 py-3 bg-[#F8DE22] text-[#111111] font-extrabold text-xs uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[3px_3px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-2"
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path d="M12 5v14M5 12h14"></path>
           </svg>
           Thêm Khoá Mới
         </button>
       </div>
 
-      {/* Stats Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white border-2 border-[#111111] p-4 rounded-2xl shadow-[4px_4px_0px_#111111]">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#777]">Tổng số Key</p>
-          <p className="text-2xl font-extrabold mt-1">{list.length}</p>
+      {/* Polish Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_#111111] flex items-center justify-between hover:-translate-y-0.5 transition-transform">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#777]">Tổng số Key</p>
+            <p className="text-3xl font-black mt-1 text-[#111111]">{list.length}</p>
+          </div>
+          <div className="w-10 h-10 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-center font-bold text-amber-600 text-lg">
+            #
+          </div>
         </div>
-        <div className="bg-white border-2 border-[#111111] p-4 rounded-2xl shadow-[4px_4px_0px_#111111]">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#777]">Hero Section</p>
-          <p className="text-2xl font-extrabold mt-1">{list.filter(x => getGroup(x.key) === 'hero').length}</p>
+        <div className="bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_#111111] flex items-center justify-between hover:-translate-y-0.5 transition-transform">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#777]">Hero Section</p>
+            <p className="text-3xl font-black mt-1 text-[#111111]">{list.filter(x => getGroup(x.key) === 'hero').length}</p>
+          </div>
+          <div className="w-10 h-10 bg-blue-50 rounded-xl border border-blue-200 flex items-center justify-center font-bold text-blue-600 text-lg">
+            H
+          </div>
         </div>
-        <div className="bg-white border-2 border-[#111111] p-4 rounded-2xl shadow-[4px_4px_0px_#111111]">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#777]">Newsletter & Promo</p>
-          <p className="text-2xl font-extrabold mt-1">
-            {list.filter(x => ['newsletter', 'promo'].includes(getGroup(x.key))).length}
-          </p>
+        <div className="bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_#111111] flex items-center justify-between hover:-translate-y-0.5 transition-transform">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#777]">Newsletter & Promo</p>
+            <p className="text-3xl font-black mt-1 text-[#111111]">
+              {list.filter(x => ['newsletter', 'promo'].includes(getGroup(x.key))).length}
+            </p>
+          </div>
+          <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-center font-bold text-emerald-600 text-lg">
+            %
+          </div>
         </div>
-        <div className="bg-white border-2 border-[#111111] p-4 rounded-2xl shadow-[4px_4px_0px_#111111]">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#777]">Khóa Tùy Biến (Custom)</p>
-          <p className="text-2xl font-extrabold mt-1">{list.filter(x => getGroup(x.key) === 'custom').length}</p>
+        <div className="bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_#111111] flex items-center justify-between hover:-translate-y-0.5 transition-transform">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#777]">Khóa Custom</p>
+            <p className="text-3xl font-black mt-1 text-[#111111]">{list.filter(x => getGroup(x.key) === 'custom').length}</p>
+          </div>
+          <div className="w-10 h-10 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg">
+            C
+          </div>
         </div>
       </div>
 
-      {/* Filters and search */}
-      <div className="bg-white border-2 border-[#111111] p-4 rounded-2xl shadow-[4px_4px_0px_#111111] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
+      {/* Advanced Filters & Search box */}
+      <div className="bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_#111111] mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative flex-1 max-w-lg">
           <input
             type="text"
-            placeholder="Tìm kiếm key hoặc nội dung..."
+            placeholder="Tìm kiếm theo khóa (key) hoặc giá trị cấu hình..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border-2 border-[#111111] rounded-xl text-xs font-semibold placeholder:text-[#888] focus:outline-none"
+            className="w-full pl-10 pr-10 py-3 border-2 border-[#111111] rounded-xl text-xs font-bold placeholder:text-[#888] focus:outline-none bg-[#fdfdfd] shadow-[inner_2px_2px_0px_rgba(0,0,0,0.05)] focus:bg-white transition-all"
           />
-          <svg className="absolute left-3 top-2.5 w-4 h-4 text-[#888]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <svg className="absolute left-3.5 top-3.5 w-4 h-4 text-[#555]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-2.5 p-1 text-gray-400 hover:text-black transition-colors rounded-md"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(groupLabels).map(([group, label]) => (
-            <button
-              key={group}
-              onClick={() => setFilterGroup(group)}
-              className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${filterGroup === group
-                  ? "bg-[#111111] text-white"
-                  : "bg-white text-[#111111] hover:bg-[#f3f4f6]"
+        {/* Categories / Groups Selector list with counts */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {Object.entries(groupLabels).map(([group, label]) => {
+            const count = getGroupCount(group);
+            const active = filterGroup === group;
+            return (
+              <button
+                key={group}
+                onClick={() => setFilterGroup(group)}
+                className={`px-3.5 py-2 rounded-xl border-2 border-[#111111] text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                  active
+                    ? "bg-[#111111] text-white shadow-[2px_2px_0px_#F8DE22]"
+                    : "bg-white text-[#111111] hover:bg-[#f3f4f6] active:translate-y-px"
                 }`}
-            >
-              {label}
-            </button>
-          ))}
+              >
+                <span>{label}</span>
+                <span className={`inline-block px-1.5 py-px rounded-md text-[9px] font-extrabold ${
+                  active ? "bg-white/20 text-[#F8DE22]" : "bg-gray-100 text-[#555]"
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* List / Table */}
+      {/* Main Content Table/Cards Wrapper */}
       <div className="bg-white border-2 border-[#111111] rounded-2xl shadow-[4px_4px_0px_#111111] overflow-hidden">
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4">
-            <div className="w-8 h-8 border-4 border-[#111111] border-t-[#F8DE22] rounded-full animate-spin" />
-            <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#777]">Đang tải cấu hình...</p>
+          <div className="py-24 flex flex-col items-center justify-center gap-4">
+            <div className="w-10 h-10 border-4 border-[#111111] border-t-[#F8DE22] rounded-full animate-spin" />
+            <p className="text-[11px] font-black uppercase tracking-widest text-[#555]">Đang tải cấu hình...</p>
           </div>
         ) : filteredList.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-sm font-bold text-[#555] uppercase tracking-wide">Không tìm thấy nội dung phù hợp</p>
-            <p className="text-xs text-[#888] mt-1">Hãy thử tìm kiếm từ khóa khác hoặc tạo khóa cấu hình mới.</p>
+          <div className="py-20 text-center px-4">
+            <div className="w-16 h-16 bg-gray-50 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-sm font-bold text-[#111111] uppercase tracking-wide">Không tìm thấy nội dung phù hợp</p>
+            <p className="text-xs text-[#666] mt-1 max-w-sm mx-auto">
+              Hãy thử tìm kiếm từ khóa khác hoặc tạo khóa cấu hình mới phục vụ hiển thị.
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b-2 border-[#111111] bg-[#f9fafb]">
-                  <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-[#111111] w-1/4">Key Cấu Hình</th>
-                  <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-[#111111]">Giá Trị / Nội Dung</th>
-                  <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-[#111111] w-40 text-right">Thao Tác</th>
+                  <th className="px-6 py-4.5 text-[10px] font-black uppercase tracking-widest text-[#111111] w-[30%]">Khoá cấu hình</th>
+                  <th className="px-6 py-4.5 text-[10px] font-black uppercase tracking-widest text-[#111111] w-[50%]">Nội dung / Giá trị</th>
+                  <th className="px-6 py-4.5 text-[10px] font-black uppercase tracking-widest text-[#111111] w-[20%] text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y border-b border-[#111111]/10">
                 {filteredList.map((item) => {
                   const grp = getGroup(item.key);
-                  const grpBadge = grp === 'hero' ? 'bg-amber-100 text-amber-800' :
-                    grp === 'newsletter' ? 'bg-blue-100 text-blue-800' :
-                      grp === 'promo' ? 'bg-emerald-100 text-emerald-800' :
-                        grp === 'announcement' ? 'bg-rose-100 text-rose-800' :
-                          'bg-gray-100 text-gray-800';
+                  const grpBadge = grp === 'hero' ? 'bg-[#EFF6FF] text-[#1E40AF] border-[#BFDBFE]' :
+                    grp === 'newsletter' ? 'bg-[#EEF2F6] text-[#334155] border-[#CBD5E1]' :
+                      grp === 'promo' ? 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]' :
+                        grp === 'announcement' ? 'bg-[#FFF1F2] text-[#9F1239] border-[#FECDD3]' :
+                          'bg-[#F8FAFC] text-[#475569] border-[#E2E8F0]';
 
+                  const isExpanded = !!expandedKeys[item.key];
+                  const hasLongText = item.value.length > 120;
+                  
                   return (
-                    <tr key={item.key} className="border-b border-[#111111]/10 hover:bg-[#fdfdfd] transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="font-mono text-xs font-bold text-[#111111] block truncate max-w-50" title={item.key}>
-                          {item.key}
-                        </span>
-                        <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-widest ${grpBadge}`}>
-                          {groupLabels[grp] || grp}
-                        </span>
+                    <tr key={item.key} className="hover:bg-[#FCFCFC] transition-colors group">
+                      {/* Key details with Copy helper */}
+                      <td className="px-6 py-4.5 align-top">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-1.5 max-w-full">
+                            <span className="font-mono text-xs font-bold text-[#111111] bg-gray-100 px-2 py-1 rounded-md border border-gray-200 block truncate select-all" title={item.key}>
+                              {item.key}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard(item.key)}
+                              className="p-1 text-[#888] hover:text-[#111111] hover:bg-gray-100 rounded-md transition-all cursor-pointer opacity-80 sm:opacity-0 group-hover:opacity-100 shrink-0"
+                              title="Sao chép Key"
+                            >
+                              {copiedKey === item.key ? (
+                                <svg width="14" height="14" fill="none" stroke="#059669" strokeWidth="2.5" viewBox="0 0 24 24">
+                                  <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                              ) : (
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`inline-block px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider border ${grpBadge}`}>
+                              {groupLabels[grp] || grp}
+                            </span>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <p className="text-xs text-[#333] font-medium line-clamp-3 whitespace-pre-wrap max-w-md">
-                          {item.value}
-                        </p>
-                        {item.updated_at && (
-                          <span className="text-[9px] text-[#999] font-medium block mt-1">
-                            Cập nhật: {new Date(item.updated_at).toLocaleString("vi-VN")}
-                          </span>
-                        )}
+
+                      {/* Config values with Expandable preview */}
+                      <td className="px-6 py-4.5 align-top">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="text-xs text-[#222] font-semibold leading-relaxed whitespace-pre-wrap font-sans break-all max-w-xl">
+                            {hasLongText && !isExpanded ? `${item.value.slice(0, 120)}...` : item.value}
+                          </div>
+                          
+                          <div className="flex items-center justify-between gap-4 mt-1.5">
+                            {hasLongText && (
+                              <button
+                                onClick={() => toggleExpand(item.key)}
+                                className="text-[10px] font-black text-[#555] hover:text-black uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <span>Thu gọn</span>
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                      <path d="M18 15l-6-6-6 6" />
+                                    </svg>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>Xem đầy đủ</span>
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                      <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            
+                            {item.updated_at && (
+                              <span className="text-[9px] text-[#888] font-bold tracking-tight block ml-auto">
+                                Cập nhật: {new Date(item.updated_at).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+
+                      {/* Quick Actions */}
+                      <td className="px-6 py-4.5 align-top text-right">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => handleOpenEdit(item)}
-                            className="p-2 border-2 border-[#111111] rounded-xl hover:bg-[#F8DE22] transition-colors cursor-pointer"
-                            title="Sửa nội dung"
+                            className="p-2.5 bg-white border-2 border-[#111111] rounded-xl hover:bg-[#F8DE22] hover:shadow-[1px_1px_0px_#111111] active:translate-y-px transition-all cursor-pointer flex items-center justify-center"
+                            title="Chỉnh sửa giá trị"
                           >
-                            <svg className="w-4 h-4 text-[#111111]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-[#111111]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                               <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
                           <button
                             onClick={() => setDeleteConfirm({ open: true, key: item.key })}
-                            className="p-2 border-2 border-[#111111] rounded-xl hover:bg-[#D12052] hover:text-white transition-colors cursor-pointer"
-                            title="Xóa Key"
+                            className="p-2.5 bg-white border-2 border-[#111111] rounded-xl hover:bg-[#E11D48] hover:text-white hover:shadow-[1px_1px_0px_#111111] active:translate-y-px transition-all cursor-pointer flex items-center justify-center"
+                            title="Xóa Key này"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                               <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
@@ -291,69 +428,80 @@ export default function AdminPageContents() {
         )}
       </div>
 
-      {/* CREATE/EDIT MODAL */}
+      {/* CREATE & EDIT MODAL OVERLAY */}
       {modal.open && (
-        <div className="fixed inset-0 bg-[#111111]/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-md bg-white border-2 border-[#111111] rounded-2xl shadow-[6px_6px_0px_#111111] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 bg-[#f9fafb] border-b-2 border-[#111111] flex items-center justify-between">
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#111111]">
-                {modal.mode === "create" ? "Tạo Khoá Cấu Hình Mới" : "Sửa Nội Dung Key"}
-              </h3>
+        <div className="fixed inset-0 bg-[#111111]/60 backdrop-blur-[2px] flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-white border-3 border-[#111111] rounded-2xl shadow-[6px_6px_0px_#111111] overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal header */}
+            <div className="px-6 py-4.5 bg-[#f9fafb] border-b-2 border-[#111111] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-[#F8DE22] border-2 border-[#111111] rounded-full inline-block" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#111111]">
+                  {modal.mode === "create" ? "Tạo Cấu Hình Mới" : "Chỉnh Sửa Giá Trị Cấu Hình"}
+                </h3>
+              </div>
               <button
                 onClick={() => setModal({ open: false, mode: "create" })}
-                className="w-6 h-6 border-2 border-[#111111] rounded-lg flex items-center justify-center text-xs font-bold hover:bg-[#D12052] hover:text-white cursor-pointer transition-colors"
+                className="w-7 h-7 border-2 border-[#111111] rounded-lg flex items-center justify-center text-xs font-black hover:bg-[#E11D48] hover:text-white cursor-pointer transition-colors shadow-[1px_1px_0px_#111111]"
               >
                 ✕
               </button>
             </div>
 
+            {/* Modal form */}
             <form onSubmit={handleSave} className="p-6 flex flex-col gap-4">
               {formError && (
-                <div className="p-3 bg-red-50 border-2 border-red-500 text-red-700 text-xs font-semibold rounded-xl">
-                  ⚠️ {formError}
+                <div className="p-3.5 bg-red-50 border-2 border-red-500 text-red-700 text-xs font-bold rounded-xl flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>{formError}</span>
                 </div>
               )}
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-1.5">
-                  Key Định Danh {modal.mode === "edit" && <span className="text-red-500">(Không thể sửa)</span>}
+                <label className="block text-[10px] font-black uppercase tracking-wider text-[#111111] mb-1.5">
+                  Mã Key Định Danh {modal.mode === "edit" && <span className="text-red-500 font-bold">(Không thể sửa)</span>}
                 </label>
                 <input
                   type="text"
                   value={formData.key}
                   onChange={(e) => setFormData(prev => ({ ...prev, key: e.target.value }))}
                   disabled={modal.mode === "edit"}
-                  placeholder="Ví dụ: custom_main_footer_title"
-                  className="w-full px-3 py-2 border-2 border-[#111111] rounded-xl text-xs font-semibold focus:outline-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="Ví dụ: hero_title_main, announcement_banner_text"
+                  className="w-full px-3.5 py-3 border-2 border-[#111111] rounded-xl text-xs font-bold focus:outline-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
                 />
+                {modal.mode === "create" && (
+                  <p className="text-[10px] text-gray-500 font-bold mt-1.5">
+                    * Chỉ cho phép chữ cái thường/hoa, chữ số và dấu gạch dưới (_). Nên đặt tiền tố như <code className="font-mono text-black font-extrabold bg-gray-100 px-1 py-px rounded">hero_</code> hoặc <code className="font-mono text-black font-extrabold bg-gray-100 px-1 py-px rounded">announcement_</code> để tự động phân nhóm.
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-1.5">
-                  Nội dung hiển thị (Giá trị)
+                <label className="block text-[10px] font-black uppercase tracking-wider text-[#111111] mb-1.5">
+                  Nội dung hiển thị (Giá trị cấu hình)
                 </label>
                 <textarea
                   value={formData.value}
                   onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
-                  placeholder="Nhập nội dung bạn muốn gán cho key này..."
-                  rows={4}
-                  className="w-full px-3 py-2 border-2 border-[#111111] rounded-xl text-xs font-semibold focus:outline-none bg-white"
+                  placeholder="Nhập chuỗi văn bản hoặc HTML đơn giản muốn hiển thị..."
+                  rows={6}
+                  className="w-full px-3.5 py-3 border-2 border-[#111111] rounded-xl text-xs font-semibold focus:outline-none bg-white font-sans focus:bg-[#fdfdfd] transition-colors"
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 mt-2">
-                <span
-                  role="button"
+              <div className="flex justify-end gap-3 mt-3 pt-4 border-t border-[#111111]/10">
+                <button
+                  type="button"
                   onClick={() => setModal({ open: false, mode: "create" })}
-                  className="px-4 py-2 border-2 border-[#111111] text-[#111111] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-gray-100 cursor-pointer transition-colors"
+                  className="px-4.5 py-2.5 border-2 border-[#111111] text-[#111111] text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-100 cursor-pointer transition-colors"
                 >
-                  Hủy
-                </span>
+                  Hủy bỏ
+                </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#F8DE22] text-[#111111] text-xs font-bold uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[2px_2px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
+                  className="px-5 py-2.5 bg-[#F8DE22] text-[#111111] text-xs font-black uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[2px_2px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
                 >
-                  Lưu Lại
+                  Lưu thay đổi
                 </button>
               </div>
             </form>
@@ -361,31 +509,36 @@ export default function AdminPageContents() {
         </div>
       )}
 
-      {/* DELETE CONFIRM MODAL */}
+      {/* CONFIRM DELETE MODAL */}
       {deleteConfirm.open && (
-        <div className="fixed inset-0 bg-[#111111]/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-sm bg-white border-2 border-[#111111] rounded-2xl shadow-[6px_6px_0px_#111111] overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-6 flex flex-col gap-4">
-            <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#111111]">
-              ⚠️ Xác nhận xóa Key
-            </h3>
-            <p className="text-xs text-[#555] font-semibold leading-relaxed">
-              Bạn có chắc chắn muốn xóa key cấu hình <code className="font-mono bg-gray-100 px-1 py-0.5 rounded text-red-600 font-bold">{deleteConfirm.key}</code>? Hành động này sẽ không thể khôi phục và giao diện hiển thị key này có thể bị lỗi.
+        <div className="fixed inset-0 bg-[#111111]/60 backdrop-blur-[2px] flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white border-3 border-[#111111] rounded-2xl shadow-[6px_6px_0px_#111111] overflow-hidden animate-in zoom-in-95 duration-200 p-6 flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 bg-[#E11D48] border-2 border-[#111111] rounded-full" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#111111]">
+                Xác nhận xóa khoá cấu hình
+              </h3>
+            </div>
+            
+            <p className="text-xs text-[#444] font-semibold leading-relaxed">
+              Bạn có chắc chắn muốn xoá vĩnh viễn khoá cấu hình <code className="font-mono bg-red-50 text-[#E11D48] border border-red-100 px-1.5 py-0.5 rounded font-black break-all">{deleteConfirm.key}</code>? Hành động này sẽ loại bỏ nội dung cấu hình và có thể ảnh hưởng tới giao diện hiển thị của người dùng.
             </p>
-            <div className="flex justify-end gap-2.5 mt-2">
-              <span
-                role="button"
+            
+            <div className="flex justify-end gap-3 mt-2.5 pt-4 border-t border-[#111111]/10">
+              <button
+                type="button"
                 onClick={() => setDeleteConfirm({ open: false })}
-                className="px-4 py-2 border-2 border-[#111111] text-[#111111] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-gray-100 cursor-pointer transition-colors"
+                className="px-4.5 py-2.5 border-2 border-[#111111] text-[#111111] text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-100 cursor-pointer transition-colors"
               >
-                Hủy
-              </span>
-              <span
-                role="button"
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
                 onClick={handleDelete}
-                className="px-4 py-2 bg-[#D12052] text-white text-xs font-bold uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[2px_2px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] cursor-pointer transition-all"
+                className="px-5 py-2.5 bg-[#E11D48] text-white text-xs font-black uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[2px_2px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] cursor-pointer transition-all"
               >
-                Xóa Bỏ
-              </span>
+                Xác nhận xoá
+              </button>
             </div>
           </div>
         </div>

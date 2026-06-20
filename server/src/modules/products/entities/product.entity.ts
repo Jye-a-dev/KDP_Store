@@ -31,6 +31,9 @@ export interface Product {
   rotation_z: number;
   materials_config: MaterialsConfig;
   camera_config: CameraConfig;
+  original_price: number | null;
+  condition: string;
+  import_date: Date;
   created_at: Date;
   updated_at: Date;
 }

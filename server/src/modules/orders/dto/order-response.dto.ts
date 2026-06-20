@@ -139,7 +139,7 @@ export class OrderCountResponseDto {
   cancelled!: number;
 
   @ApiProperty({
-    description: 'Tổng doanh thu từ tất cả các đơn hàng thành công (delivered)',
+    description: 'Tổng doanh thu từ tất cả các đơn hàng thành công ',
     example: 120500000,
   })
   total_revenue!: number;

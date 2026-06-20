@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { User, UserStats, PaginatedResponse } from "@/types/api";
+import { User, UserStats, PaginatedResponse, UserAddress } from "@/types/api";
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -19,6 +19,8 @@ export interface UpdateUserData {
   phone?: string;
   is_active?: boolean;
   role?: "customer" | "admin";
+  avatar_url?: string;
+  addresses?: UserAddress[];
 }
 
 export function useUsers() {

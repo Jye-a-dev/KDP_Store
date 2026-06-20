@@ -40,6 +40,11 @@ export default function CheckoutModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
+  // New MoMo States
+  const [createdOrder, setCreatedOrder] = useState<any | null>(null);
+  const [showMomoQr, setShowMomoQr] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+
   // Pre-fill shipping info when user is loaded / modal opens
   useEffect(() => {
     if (user && isOpen) {
@@ -48,8 +53,38 @@ export default function CheckoutModal({
       setShippingAddress("");
       setPaymentMethod("COD");
       setCheckoutError(null);
+      setCreatedOrder(null);
+      setShowMomoQr(false);
+      setIsPolling(false);
     }
   }, [user, isOpen]);
+
+  // Poll order status if MoMo payment is pending
+  useEffect(() => {
+    if (!isPolling || !createdOrder?.id) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_URL}/orders/${createdOrder.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.payment_info?.status === "paid") {
+            setIsPolling(false);
+            setShowMomoQr(false);
+            onSuccess("🎉 Đã nhận được thanh toán MoMo! Đang chuyển hướng...");
+            onClose();
+            setTimeout(() => {
+              router.push("/dashboard/customer/orders");
+            }, 2000);
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi khi kiểm tra trạng thái thanh toán:", err);
+      }
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [isPolling, createdOrder, API_URL, onSuccess, onClose, router]);
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,11 +129,19 @@ export default function CheckoutModal({
         throw new Error(errData.message || "Đặt hàng thất bại.");
       }
 
-      onSuccess("🎉 Đặt hàng thành công! Đang chuyển hướng...");
-      onClose();
-      setTimeout(() => {
-        router.push("/dashboard/customer/orders");
-      }, 2000);
+      const created = await res.json();
+
+      if (paymentMethod === "MOMO") {
+        setCreatedOrder(created);
+        setShowMomoQr(true);
+        setIsPolling(true);
+      } else {
+        onSuccess("🎉 Đặt hàng thành công! Đang chuyển hướng...");
+        onClose();
+        setTimeout(() => {
+          router.push("/dashboard/customer/orders");
+        }, 2000);
+      }
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
     } finally {
@@ -122,7 +165,7 @@ export default function CheckoutModal({
   const productImages = images(product.images_2d);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-150 flex items-center justify-center p-4">
       <div className="bg-white border-4 border-[#111111] rounded-3xl w-full max-w-lg shadow-[8px_8px_0px_#111111] overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
         <div className="bg-[#111111] text-white px-6 py-4 flex justify-between items-center border-b-4 border-[#111111]">
@@ -137,132 +180,177 @@ export default function CheckoutModal({
         </div>
 
         {/* Modal Content */}
-        <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-          {checkoutError && (
-            <div className="p-3.5 bg-[#D12052]/10 border-2 border-[#D12052] text-[#D12052] text-xs font-bold rounded-xl">
-              ⚠️ {checkoutError}
-            </div>
-          )}
+        {showMomoQr && createdOrder ? (
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center text-center bg-white">
+            <div className="w-full max-w-xs bg-white border-4 border-[#111111] rounded-3xl p-5 shadow-[4px_4px_0px_#111111] flex flex-col items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#D12052] mb-1">
+                Thanh toán qua MoMo
+              </span>
+              <h4 className="text-xs font-black uppercase text-gray-700 mb-4">
+                Quét mã QR bằng điện thoại
+              </h4>
 
-          {/* Product Info Summary */}
-          <div className="flex gap-4 p-3 bg-[#f7f9fa] border-2 border-[#111111] rounded-2xl">
-            <div className="w-16 h-16 bg-white border-2 border-[#111111] rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={mainImage || productImages[0]} alt={product.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-bold text-xs text-[#111111] truncate uppercase">{product.name}</h4>
-              <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500 font-bold uppercase">
-                <span>Màu:</span>
-                <span className="w-3 h-3 rounded-full border border-black/10 inline-block" style={{ backgroundColor: selectedColor || "#D12052" }} />
-                <span className="ml-2">SL: {quantity}</span>
+              {/* QR Image container */}
+              <div className="w-48 h-48 border-2 border-[#111111] bg-white p-2 rounded-xl flex items-center justify-center shadow-[2px_2px_0px_#111111] overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                    `${typeof window !== "undefined" ? window.location.origin : ""}/payment-success?order_id=${createdOrder.id}`
+                  )}`}
+                  alt="Momo QR Code"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <p className="font-extrabold text-[#D12052] text-xs mt-1">
-                {(Math.round(Number(product.price)) * quantity).toLocaleString("vi-VN")}đ
-              </p>
-            </div>
-          </div>
 
-          {/* Delivery Form */}
-          <div className="flex flex-col gap-3.5">
-            <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Thông Tin Giao Hàng</h5>
-            
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Họ và tên người nhận</label>
-              <input
-                type="text"
-                required
-                value={shippingName}
-                onChange={(e) => setShippingName(e.target.value)}
-                placeholder="Nguyễn Văn A"
-                className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Số điện thoại</label>
-              <input
-                type="tel"
-                required
-                value={shippingPhone}
-                onChange={(e) => setShippingPhone(e.target.value)}
-                placeholder="09XXXXXXXX"
-                className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Địa chỉ chi tiết</label>
-              <textarea
-                required
-                rows={2}
-                value={shippingAddress}
-                onChange={(e) => setShippingAddress(e.target.value)}
-                placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
-                className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa] resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Payment Method Selector */}
-          <div className="flex flex-col gap-2">
-            <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Phương Thức Thanh Toán</h5>
-            <div className="grid grid-cols-2 gap-2">
-              <div
-                onClick={() => setPaymentMethod("COD")}
-                className={`border-2 rounded-xl p-3 flex items-center gap-2 cursor-pointer transition-all ${
-                  paymentMethod === "COD" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
-                }`}
-              >
-                <input type="radio" checked={paymentMethod === "COD"} readOnly className="accent-[#03AED2]" />
-                <span className="text-xs uppercase tracking-wider">COD (Tiền mặt)</span>
+              {/* Status indicator */}
+              <div className="mt-4 flex items-center gap-2 bg-[#03AED2]/10 border border-[#03AED2]/30 px-3 py-1.5 rounded-lg">
+                <span className="h-2.5 w-2.5 bg-[#03AED2] rounded-full animate-ping"></span>
+                <span className="text-[9px] font-extrabold text-[#03AED2] uppercase tracking-wider">
+                  Đang chờ quét mã...
+                </span>
               </div>
-              <div
-                onClick={() => setPaymentMethod("MOMO")}
-                className={`border-2 rounded-xl p-3 flex items-center gap-2 cursor-pointer transition-all ${
-                  paymentMethod === "MOMO" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
-                }`}
-              >
-                <input type="radio" checked={paymentMethod === "MOMO"} readOnly className="accent-[#03AED2]" />
-                <span className="text-xs uppercase tracking-wider">MoMo</span>
+
+              <div className="mt-4 text-[9px] font-bold text-gray-500 uppercase tracking-wider leading-relaxed">
+                Sau khi quét bằng điện thoại, hệ thống sẽ tự động cập nhật và chuyển hướng.
               </div>
             </div>
-          </div>
 
-          {/* Bill Details */}
-          <div className="border-t border-[#111111]/10 pt-4 flex flex-col gap-2">
-            <div className="flex justify-between text-xs font-bold text-gray-500">
-              <span>Tiền sản phẩm:</span>
-              <span>{(Math.round(Number(product.price)) * quantity).toLocaleString("vi-VN")}đ</span>
-            </div>
-            <div className="flex justify-between text-xs font-bold text-gray-500">
-              <span>Phí vận chuyển:</span>
-              <span>30.000đ</span>
-            </div>
-            <div className="flex justify-between text-sm font-extrabold text-[#111111] border-t border-[#111111] pt-2">
-              <span>TỔNG THANH TOÁN:</span>
-              <span>{((Math.round(Number(product.price)) * quantity) + 30000).toLocaleString("vi-VN")}đ</span>
-            </div>
+            <button
+              onClick={() => {
+                setShowMomoQr(false);
+                setIsPolling(false);
+              }}
+              className="mt-6 px-6 py-2.5 border-2 border-[#111111] text-[#111111] hover:bg-neutral-50 text-[10px] font-bold uppercase tracking-wider rounded-xl cursor-pointer"
+            >
+              Hủy & Chọn Phương Thức Khác
+            </button>
           </div>
-
-          {/* Submit CTA */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-3.5 mt-2 bg-[#D12052] text-white font-extrabold text-xs uppercase tracking-widest rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[3px_3px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            ) : (
-              <>
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                Xác Nhận Thanh Toán
-              </>
+        ) : (
+          <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
+            {checkoutError && (
+              <div className="p-3.5 bg-[#D12052]/10 border-2 border-[#D12052] text-[#D12052] text-xs font-bold rounded-xl">
+                ⚠️ {checkoutError}
+              </div>
             )}
-          </button>
-        </form>
+
+            {/* Product Info Summary */}
+            <div className="flex gap-4 p-3 bg-[#f7f9fa] border-2 border-[#111111] rounded-2xl">
+              <div className="w-16 h-16 bg-white border-2 border-[#111111] rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={mainImage || productImages[0]} alt={product.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-xs text-[#111111] truncate uppercase">{product.name}</h4>
+                <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500 font-bold uppercase">
+                  <span>Màu:</span>
+                  <span className="w-3 h-3 rounded-full border border-black/10 inline-block" style={{ backgroundColor: selectedColor || "#D12052" }} />
+                  <span className="ml-2">SL: {quantity}</span>
+                </div>
+                <p className="font-extrabold text-[#D12052] text-xs mt-1">
+                  {(Math.round(Number(product.price)) * quantity).toLocaleString("vi-VN")}đ
+                </p>
+              </div>
+            </div>
+
+            {/* Delivery Form */}
+            <div className="flex flex-col gap-3.5">
+              <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Thông Tin Giao Hàng</h5>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Họ và tên người nhận</label>
+                <input
+                  type="text"
+                  required
+                  value={shippingName}
+                  onChange={(e) => setShippingName(e.target.value)}
+                  placeholder="Nguyễn Văn A"
+                  className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Số điện thoại</label>
+                <input
+                  type="tel"
+                  required
+                  value={shippingPhone}
+                  onChange={(e) => setShippingPhone(e.target.value)}
+                  placeholder="09XXXXXXXX"
+                  className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Địa chỉ chi tiết</label>
+                <textarea
+                  required
+                  rows={2}
+                  value={shippingAddress}
+                  onChange={(e) => setShippingAddress(e.target.value)}
+                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
+                  className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa] resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="flex flex-col gap-2">
+              <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Phương Thức Thanh Toán</h5>
+              <div className="grid grid-cols-2 gap-2">
+                <div
+                  onClick={() => setPaymentMethod("COD")}
+                  className={`border-2 rounded-xl p-3 flex items-center gap-2 cursor-pointer transition-all ${paymentMethod === "COD" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
+                    }`}
+                >
+                  <input type="radio" checked={paymentMethod === "COD"} readOnly className="accent-[#03AED2]" />
+                  <span className="text-xs uppercase tracking-wider">COD (Tiền mặt)</span>
+                </div>
+                <div
+                  onClick={() => setPaymentMethod("MOMO")}
+                  className={`border-2 rounded-xl p-3 flex items-center gap-2 cursor-pointer transition-all ${paymentMethod === "MOMO" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
+                    }`}
+                >
+                  <input type="radio" checked={paymentMethod === "MOMO"} readOnly className="accent-[#03AED2]" />
+                  <span className="text-xs uppercase tracking-wider">MoMo</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bill Details */}
+            <div className="border-t border-[#111111]/10 pt-4 flex flex-col gap-2">
+              <div className="flex justify-between text-xs font-bold text-gray-500">
+                <span>Tiền sản phẩm:</span>
+                <span>{(Math.round(Number(product.price)) * quantity).toLocaleString("vi-VN")}đ</span>
+              </div>
+              <div className="flex justify-between text-xs font-bold text-gray-500">
+                <span>Phí vận chuyển:</span>
+                <span>30.000đ</span>
+              </div>
+              <div className="flex justify-between text-sm font-extrabold text-[#111111] border-t border-[#111111] pt-2">
+                <span>TỔNG THANH TOÁN:</span>
+                <span>{((Math.round(Number(product.price)) * quantity) + 30000).toLocaleString("vi-VN")}đ</span>
+              </div>
+            </div>
+
+            {/* Submit CTA */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 mt-2 bg-[#D12052] text-white font-extrabold text-xs uppercase tracking-widest rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[3px_3px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  Xác Nhận Thanh Toán
+                </>
+              )}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

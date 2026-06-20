@@ -59,10 +59,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existingIdx = prev.findIndex((i) => i.id === item.id && i.color === item.color);
       let updated: CartItem[];
       if (existingIdx > -1) {
+        // Capped at 1 for secondhand unique items
         updated = [...prev];
-        updated[existingIdx].quantity += qty;
+        updated[existingIdx].quantity = 1;
       } else {
-        updated = [...prev, { ...item, quantity: qty }];
+        updated = [...prev, { ...item, quantity: 1 }];
       }
       saveCart(updated);
       return updated;
@@ -79,7 +80,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const updateQuantity = useCallback((id: number, color: string, qty: number) => {
     setCartItems((prev) => {
-      const updated = prev.map((i) => (i.id === id && i.color === color ? { ...i, quantity: Math.max(qty, 1) } : i));
+      // Capped at 1 for secondhand unique items
+      const updated = prev.map((i) => (i.id === id && i.color === color ? { ...i, quantity: 1 } : i));
       saveCart(updated);
       return updated;
     });

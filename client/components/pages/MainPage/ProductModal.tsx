@@ -41,7 +41,67 @@ export default function ProductModal({
   );
   const [model3dUrl, setModel3dUrl] = useState(product?.model_3d_url ?? "");
   const [badge, setBadge] = useState(product?.badge ?? "None");
+  const [originalPrice, setOriginalPrice] = useState(
+    product?.original_price ? String(product.original_price) : ""
+  );
+  const [condition, setCondition] = useState(product?.condition ?? "Mới 95%");
+  const [importDate, setImportDate] = useState(
+    product?.import_date
+      ? new Date(product.import_date).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0]
+  );
   const [error, setError] = useState("");
+
+  // Helper states for adding images from multi-sources
+  const [addMode, setAddMode] = useState<"device" | "url" | "drive">("device");
+  const [tempUrl, setTempUrl] = useState("");
+  const [tempDrive, setTempDrive] = useState("");
+
+  const convertGoogleDriveUrl = (url: string): string => {
+    if (!url) return "";
+    const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    return url;
+  };
+
+  const appendImageUrl = (newUrl: string) => {
+    setImages2d((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return newUrl;
+      return `${trimmed}, ${newUrl}`;
+    });
+  };
+
+  const handleProductFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Kích thước tối đa 2MB!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        appendImageUrl(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddTempUrl = () => {
+    if (!tempUrl.trim()) return;
+    appendImageUrl(tempUrl.trim());
+    setTempUrl("");
+  };
+
+  const handleAddTempDrive = () => {
+    if (!tempDrive.trim()) return;
+    const converted = convertGoogleDriveUrl(tempDrive.trim());
+    appendImageUrl(converted);
+    setTempDrive("");
+  };
 
   // Automatically generate SKU and Slug-like SKU when name changes (only in create mode)
   useEffect(() => {
@@ -90,6 +150,9 @@ export default function ProductModal({
       sku: sku.trim(),
       price: price.trim(),
       discount_price: discountPrice.trim() ? discountPrice.trim() : null,
+      original_price: originalPrice.trim() ? originalPrice.trim() : null,
+      condition: condition.trim(),
+      import_date: importDate ? new Date(importDate).toISOString() : undefined,
       description: description.trim(),
       stock: Number(stock),
       category_id: categoryId ? Number(categoryId) : undefined,
@@ -194,6 +257,48 @@ export default function ProductModal({
             </div>
           </div>
 
+          {/* Thông tin Second-hand */}
+          <div className="bg-neutral-50 p-4 border-2 border-dashed border-[#111111]/20 rounded-2xl flex flex-col gap-3">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Thông tin Second-hand</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                  Tình trạng (Độ mới)
+                </label>
+                <input
+                  type="text"
+                  value={condition}
+                  onChange={(e) => setCondition(e.target.value)}
+                  placeholder="VD: Mới 95%, Likenew"
+                  className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-white bg-white"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                  Giá gốc của hãng (VNĐ)
+                </label>
+                <input
+                  type="text"
+                  value={originalPrice}
+                  onChange={(e) => setOriginalPrice(e.target.value)}
+                  placeholder="VD: 1500000"
+                  className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-white bg-white"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                Ngày nhập hàng về kho
+              </label>
+              <input
+                type="date"
+                value={importDate}
+                onChange={(e) => setImportDate(e.target.value)}
+                className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-white bg-white cursor-pointer"
+              />
+            </div>
+          </div>
+
           {/* Số lượng tồn kho & Huy hiệu */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
@@ -272,6 +377,90 @@ export default function ProductModal({
               placeholder="VD: https://link1.jpg, https://link2.jpg"
               className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
             />
+
+            {/* Helper tool to add images from multi-sources */}
+            <div className="border-2 border-dashed border-[#111111]/20 p-3 rounded-xl bg-neutral-50/50 space-y-3 mt-1.5">
+              <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-[#03AED2] block">
+                Thêm nhanh ảnh (Thiết bị, URL, Google Drive)
+              </span>
+              <div className="flex border-2 border-[#111111] rounded-xl overflow-hidden shadow-[2px_2px_0px_#111111] bg-white">
+                {(["device", "url", "drive"] as const).map((m) => {
+                  const labels = {
+                    device: "📁 Thiết bị",
+                    url: "🔗 URL",
+                    drive: "🤖 Drive"
+                  };
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setAddMode(m)}
+                      className={`flex-1 py-1 text-[9px] font-extrabold uppercase cursor-pointer border-r border-[#111111] last:border-none transition-colors ${
+                        addMode === m ? "bg-[#111111] text-white" : "bg-white text-[#111111] hover:bg-[#f7f9fa]"
+                      }`}
+                    >
+                      {labels[m]}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {addMode === "device" && (
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="product-file-input"
+                    className="hidden"
+                    onChange={handleProductFileChange}
+                  />
+                  <label
+                    htmlFor="product-file-input"
+                    className="py-1.5 bg-white border-2 border-[#111111] rounded-lg text-center text-[10px] font-extrabold uppercase cursor-pointer hover:bg-neutral-50 shadow-[1.5px_1.5px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0.5px_0.5px_0px_#111111] block"
+                  >
+                    Chọn file ảnh từ thiết bị
+                  </label>
+                </div>
+              )}
+
+              {addMode === "url" && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tempUrl}
+                    onChange={(e) => setTempUrl(e.target.value)}
+                    placeholder="Dán link ảnh tại đây..."
+                    className="flex-1 border-2 border-[#111111] py-1 px-2.5 rounded-lg text-xs font-semibold bg-white outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddTempUrl}
+                    className="px-3 py-1 bg-[#F8DE22] border-2 border-[#111111] rounded-lg text-[10px] font-extrabold uppercase cursor-pointer shadow-[1.5px_1.5px_0px_#111111]"
+                  >
+                    Thêm
+                  </button>
+                </div>
+              )}
+
+              {addMode === "drive" && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tempDrive}
+                    onChange={(e) => setTempDrive(e.target.value)}
+                    placeholder="Dán link Google Drive tại đây..."
+                    className="flex-1 border-2 border-[#111111] py-1 px-2.5 rounded-lg text-xs font-semibold bg-white outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddTempDrive}
+                    className="px-3 py-1 bg-[#F8DE22] border-2 border-[#111111] rounded-lg text-[10px] font-extrabold uppercase cursor-pointer shadow-[1.5px_1.5px_0px_#111111]"
+                  >
+                    Thêm
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* URL Model 3D */}

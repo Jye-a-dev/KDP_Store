@@ -30,6 +30,7 @@ export class AuthUserDto {
   @ApiPropertyOptional() avatar_url?: string;
   @ApiProperty() role!: string;
   @ApiProperty() is_active!: boolean;
+  @ApiPropertyOptional() addresses?: any[];
 }
 
 export class AuthResponseDto {

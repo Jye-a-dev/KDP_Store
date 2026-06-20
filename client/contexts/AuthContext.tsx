@@ -10,6 +10,7 @@ import React, {
 } from "react";
 
 import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
+import { UserAddress } from "@/types/api";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface AuthUser {
@@ -20,6 +21,7 @@ export interface AuthUser {
   avatar_url?: string;
   role: "customer" | "admin";
   is_active: boolean;
+  addresses?: UserAddress[];
 }
 
 interface AuthContextValue {

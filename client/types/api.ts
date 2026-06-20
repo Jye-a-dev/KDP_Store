@@ -54,6 +54,9 @@ export interface Product {
   sku: string;
   price: string;
   discount_price?: string | number | null;
+  original_price?: string | number | null;
+  condition?: string;
+  import_date?: string;
   description: string;
   stock: number;
   images_2d: string[] | string;
@@ -64,6 +67,16 @@ export interface Product {
     colors: string[];
     textures: string[];
   };
+}
+
+export interface StaticPage {
+  id: number;
+  slug: string;
+  title: string;
+  content: string;
+  group_type: "service" | "explore";
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Category {

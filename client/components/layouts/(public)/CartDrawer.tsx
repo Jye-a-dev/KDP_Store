@@ -30,6 +30,11 @@ export default function CartDrawer() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // New MoMo States
+  const [createdOrder, setCreatedOrder] = useState<any | null>(null);
+  const [showMomoQr, setShowMomoQr] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+
   // Sync user info for checkout
   useEffect(() => {
     if (user) {
@@ -38,14 +43,45 @@ export default function CartDrawer() {
     }
   }, [user]);
 
-  // Reset step when drawer closes/opens
+  // Reset states when drawer closes/opens
   useEffect(() => {
     if (!isCartOpen) {
       setStep("cart");
       setCheckoutError(null);
       setSuccessMsg(null);
+      setCreatedOrder(null);
+      setShowMomoQr(false);
+      setIsPolling(false);
     }
   }, [isCartOpen]);
+
+  // Poll order status if MoMo payment is pending
+  useEffect(() => {
+    if (!isPolling || !createdOrder?.id) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_URL}/orders/${createdOrder.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.payment_info?.status === "paid") {
+            setIsPolling(false);
+            setShowMomoQr(false);
+            setSuccessMsg("🎉 Đã nhận được thanh toán MoMo! Đang chuyển hướng...");
+            clearCart();
+            setTimeout(() => {
+              setIsCartOpen(false);
+              router.push("/dashboard/customer/orders");
+            }, 2000);
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi khi kiểm tra trạng thái thanh toán:", err);
+      }
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [isPolling, createdOrder, API_URL, clearCart, setIsCartOpen, router]);
 
   if (!isCartOpen) return null;
 
@@ -99,12 +135,20 @@ export default function CartDrawer() {
         throw new Error(errData.message || "Đặt hàng thất bại.");
       }
 
-      setSuccessMsg("🎉 Đặt hàng thành công! Đang chuyển hướng...");
-      clearCart();
-      setTimeout(() => {
-        setIsCartOpen(false);
-        router.push("/dashboard/customer/orders");
-      }, 2000);
+      const created = await res.json();
+
+      if (paymentMethod === "MOMO") {
+        setCreatedOrder(created);
+        setShowMomoQr(true);
+        setIsPolling(true);
+      } else {
+        setSuccessMsg("🎉 Đặt hàng thành công! Đang chuyển hướng...");
+        clearCart();
+        setTimeout(() => {
+          setIsCartOpen(false);
+          router.push("/dashboard/customer/orders");
+        }, 2000);
+      }
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
     } finally {
@@ -113,7 +157,7 @@ export default function CartDrawer() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-150 flex justify-end">
       {/* Backdrop */}
       <div
         onClick={() => setIsCartOpen(false)}
@@ -148,6 +192,52 @@ export default function CartDrawer() {
             <span className="text-5xl mb-4">🎉</span>
             <h4 className="text-lg font-black text-emerald-600 uppercase tracking-wide">Đặt Hàng Thành Công!</h4>
             <p className="text-xs text-gray-500 font-semibold mt-2">{successMsg}</p>
+          </div>
+        ) : showMomoQr && createdOrder ? (
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center text-center bg-white">
+            <div className="w-full max-w-xs bg-white border-4 border-[#111111] rounded-3xl p-5 shadow-[4px_4px_0px_#111111] flex flex-col items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#D12052] mb-1">
+                Thanh toán qua MoMo
+              </span>
+              <h4 className="text-xs font-black uppercase text-gray-700 mb-4">
+                Quét mã QR bằng điện thoại
+              </h4>
+
+              {/* QR Image container */}
+              <div className="w-48 h-48 border-2 border-[#111111] bg-white p-2 rounded-xl flex items-center justify-center shadow-[2px_2px_0px_#111111] overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                    `${typeof window !== "undefined" ? window.location.origin : ""}/payment-success?order_id=${createdOrder.id}`
+                  )}`}
+                  alt="Momo QR Code"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              {/* Status indicator */}
+              <div className="mt-4 flex items-center gap-2 bg-[#03AED2]/10 border border-[#03AED2]/30 px-3 py-1.5 rounded-lg">
+                <span className="h-2.5 w-2.5 bg-[#03AED2] rounded-full animate-ping"></span>
+                <span className="text-[9px] font-extrabold text-[#03AED2] uppercase tracking-wider">
+                  Đang chờ quét mã...
+                </span>
+              </div>
+
+              <div className="mt-4 text-[9px] font-bold text-gray-500 uppercase tracking-wider leading-relaxed">
+                Sau khi quét bằng điện thoại, hệ thống sẽ tự động cập nhật và chuyển hướng.
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowMomoQr(false);
+                setIsPolling(false);
+                setStep("checkout");
+              }}
+              className="mt-6 px-6 py-2.5 border-2 border-[#111111] text-[#111111] hover:bg-neutral-50 text-[10px] font-bold uppercase tracking-wider rounded-xl cursor-pointer"
+            >
+              Hủy & Chọn Phương Thức Khác
+            </button>
           </div>
         ) : step === "cart" ? (
           // STEP 1: CART ITEMS
@@ -192,28 +282,14 @@ export default function CartDrawer() {
                           <span className="w-3 h-3 rounded-full border border-black/10 inline-block" style={{ backgroundColor: item.color }} />
                         </div>
                       </div>
-                      
+
                       <div className="flex justify-between items-center mt-2">
-                        {/* Quantity controls */}
-                        <div className="inline-flex items-center border border-[#111111] rounded-lg overflow-hidden bg-white">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.color, item.quantity - 1)}
-                            className="px-2.5 py-0.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-xs"
-                          >
-                            -
-                          </button>
-                          <span className="px-3 py-0.5 text-[11px] font-extrabold font-mono border-l border-r border-[#111111]">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.color, item.quantity + 1)}
-                            className="px-2.5 py-0.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-xs"
-                          >
-                            +
-                          </button>
+                        {/* Quantity display */}
+                        <div className="inline-flex items-center bg-[#f7f9fa] px-3.5 py-1 rounded-lg border border-[#111111]/20 text-[11px] font-extrabold text-[#555]">
+                          Số lượng: 1
                         </div>
                         <p className="font-extrabold text-[#D12052] text-xs">
-                          {(item.price * item.quantity).toLocaleString("vi-VN")}đ
+                          {item.price.toLocaleString("vi-VN")}đ
                         </p>
                       </div>
                     </div>
@@ -251,7 +327,7 @@ export default function CartDrawer() {
               {/* Delivery Details */}
               <div className="flex flex-col gap-3.5">
                 <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Thông Tin Nhận Hàng</h5>
-                
+
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Họ và tên người nhận</label>
                   <input
@@ -295,18 +371,16 @@ export default function CartDrawer() {
                 <div className="grid grid-cols-2 gap-2">
                   <div
                     onClick={() => setPaymentMethod("COD")}
-                    className={`border-2 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer transition-all ${
-                      paymentMethod === "COD" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
-                    }`}
+                    className={`border-2 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer transition-all ${paymentMethod === "COD" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
+                      }`}
                   >
                     <input type="radio" checked={paymentMethod === "COD"} readOnly className="accent-[#03AED2]" />
                     <span className="text-[10px] uppercase tracking-wider">COD</span>
                   </div>
                   <div
                     onClick={() => setPaymentMethod("MOMO")}
-                    className={`border-2 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer transition-all ${
-                      paymentMethod === "MOMO" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
-                    }`}
+                    className={`border-2 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer transition-all ${paymentMethod === "MOMO" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
+                      }`}
                   >
                     <input type="radio" checked={paymentMethod === "MOMO"} readOnly className="accent-[#03AED2]" />
                     <span className="text-[10px] uppercase tracking-wider">MoMo</span>

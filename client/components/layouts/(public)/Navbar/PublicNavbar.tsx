@@ -123,7 +123,7 @@ export default function PublicNavbar() {
                       </svg>
                     </button>
                     {/* Dropdown Menu */}
-                    <div className="absolute top-full left-0 mt-1.5 w-48 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 hidden group-hover/dropdown:block animate-in fade-in slide-in-from-top-1 duration-200 z-50">
+                    <div className="absolute top-full left-0 mt-1.5 w-48 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 hidden group-hover/dropdown:block animate-in fade-in slide-in-from-top-1 duration-200 z-50 before:content-[''] before:absolute before:h-2 before:left-0 before:right-0 before:-top-2">
                       {children.map((child) => {
                         const childActive = pathname === `/categories/${child.slug}`;
                         return (
@@ -174,7 +174,7 @@ export default function PublicNavbar() {
                   </svg>
                 </button>
                 {/* Dropdown Menu for Overflow items */}
-                <div className={`absolute top-full right-0 mt-1.5 w-52 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 animate-in fade-in slide-in-from-top-1 duration-200 z-50 ${isOverflowOpen ? "block" : "hidden group-hover/overflow:block"
+                <div className={`absolute top-full right-0 mt-1.5 w-52 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 animate-in fade-in slide-in-from-top-1 duration-200 z-50 before:content-[''] before:absolute before:h-2 before:left-0 before:right-0 before:-top-2 ${isOverflowOpen ? "block" : "hidden group-hover/overflow:block"
                   }`}>
                   {overflowRoots.map((cat) => {
                     const children = getChildrenNavCategories(cat.id);
@@ -200,7 +200,7 @@ export default function PublicNavbar() {
 
                         {/* Nested sub-dropdown for child categories in the overflow */}
                         {hasChildren && (
-                          <div className="absolute right-full top-0 mr-1.5 w-48 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 hidden group-hover/nested:block animate-in fade-in slide-in-from-right-1 duration-200 z-50">
+                          <div className="absolute right-full top-0 mr-1.5 w-48 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 hidden group-hover/nested:block animate-in fade-in slide-in-from-right-1 duration-200 z-50 before:content-[''] before:absolute before:w-2 before:top-0 before:bottom-0 before:-right-2">
                             {children.map((child) => {
                               const childActive = pathname === `/categories/${child.slug}`;
                               return (
@@ -256,10 +256,18 @@ export default function PublicNavbar() {
               <div className="flex items-center gap-3">
                 <Link
                   href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
-                  className="hidden lg:block font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer"
+                  className="hidden lg:flex items-center gap-2 font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer"
                   title={user.role === "admin" ? "Vào trang quản trị Admin" : "Vào trang quản trị cá nhân"}
                 >
-                  👋 {user.full_name.split(" ").pop()} {user.role === "admin" && "(Admin)"}
+                  <div className="w-6 h-6 rounded-full border border-[#111111] overflow-hidden bg-white shadow-[1px_1px_0px_#111111] flex items-center justify-center shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img 
+                      src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.full_name)}`}
+                      alt="User Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span>👋 {user.full_name.split(" ").pop()} {user.role === "admin" && "(Admin)"}</span>
                 </Link>
                 <button
                   id="navbar-logout-btn"
@@ -412,9 +420,17 @@ export default function PublicNavbar() {
                   <Link
                     href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer text-center"
+                    className="flex flex-col items-center gap-2 font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer text-center"
                   >
-                    👋 {user.full_name} {user.role === "admin" && "(Admin)"}
+                    <div className="w-10 h-10 rounded-full border-2 border-[#111111] overflow-hidden bg-white shadow-[2px_2px_0px_#111111] flex items-center justify-center shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={user.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.full_name)}`}
+                        alt="User Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span>👋 {user.full_name} {user.role === "admin" && "(Admin)"}</span>
                   </Link>
                   <button
                     onClick={handleLogout}

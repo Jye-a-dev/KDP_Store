@@ -172,4 +172,25 @@ export class CreateProductDto {
     default: { alpha: 0, beta: 1, radius: 5 },
   })
   camera_config?: CameraConfigDto;
+
+  @ApiPropertyOptional({
+    description: 'Giá gốc trước khi dùng làm đồ secondhand',
+    example: 8000000,
+    nullable: true,
+  })
+  original_price?: number;
+
+  @ApiPropertyOptional({
+    description: 'Tình trạng độ mới của sản phẩm secondhand',
+    example: 'Mới 95%',
+    default: 'Mới 95%',
+  })
+  condition?: string;
+
+  @ApiPropertyOptional({
+    description: 'Ngày nhập hàng về kho',
+    example: '2026-06-20T00:00:00.000Z',
+    default: 'now',
+  })
+  import_date?: Date;
 }
