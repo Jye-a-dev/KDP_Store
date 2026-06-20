@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Category, CategoryNode } from "@/types/api";
 import { buildTree } from "@/components/pages/AdminCategories/helpers";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -16,7 +17,7 @@ export function useCategories() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/categories?limit=200`);
+      const res = await fetchWithTimeout(`${API_URL}/categories?limit=200`);
       if (!res.ok) throw new Error("Failed to fetch categories");
       const data = (await res.json()) as { data: Category[] };
       const list = Array.isArray(data) ? data : data.data ?? [];
@@ -43,7 +44,7 @@ export function useCategories() {
           show_on_navbar: !!showOnNavbar, 
           slug: slug?.trim() || undefined 
         };
-        const res = await fetch(`${API_URL}/categories`, {
+        const res = await fetchWithTimeout(`${API_URL}/categories`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -77,7 +78,7 @@ export function useCategories() {
           show_on_navbar: !!showOnNavbar, 
           slug: slug?.trim() || undefined 
         };
-        const res = await fetch(`${API_URL}/categories/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/categories/${id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -105,7 +106,7 @@ export function useCategories() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/categories/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/categories/${id}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Order, OrderStats, PaginatedResponse } from "@/types/api";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -40,11 +41,11 @@ export function useOrders() {
         if (params.order_status) query.set("order_status", params.order_status);
 
         const [ordersRes, statsRes] = await Promise.all([
-          fetch(
+          fetchWithTimeout(
             `${API_URL}/orders?${query.toString()}`,
             { headers }
           ),
-          fetch(`${API_URL}/orders/count?user_id=${userId}`, { headers }),
+          fetchWithTimeout(`${API_URL}/orders/count?user_id=${userId}`, { headers }),
         ]);
 
         if (!ordersRes.ok || !statsRes.ok) {
@@ -71,7 +72,7 @@ export function useOrders() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `${API_URL}/orders?limit=5&sort_by=created_at&sort_order=DESC`,
         { headers: getHeaders() }
       );
@@ -98,7 +99,7 @@ export function useOrders() {
         query.set("sort_order", params.sort_order ?? "DESC");
         if (params.order_status) query.set("order_status", params.order_status);
 
-        const res = await fetch(`${API_URL}/orders?${query.toString()}`, {
+        const res = await fetchWithTimeout(`${API_URL}/orders?${query.toString()}`, {
           headers: getHeaders(),
         });
         if (!res.ok) throw new Error("Failed to fetch orders");
@@ -123,7 +124,7 @@ export function useOrders() {
 
   const fetchOrderStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/orders/count`, { headers: getHeaders() });
+      const res = await fetchWithTimeout(`${API_URL}/orders/count`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch order stats");
       const data = (await res.json()) as OrderStats;
       setOrderStats(data);
@@ -138,7 +139,7 @@ export function useOrders() {
       if (!token) throw new Error("Unauthorized");
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/orders/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/orders/${id}`, {
           method: "PATCH",
           headers: getHeaders(),
           body: JSON.stringify({ order_status }),
@@ -160,7 +161,7 @@ export function useOrders() {
       if (!token) throw new Error("Unauthorized");
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/orders/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/orders/${id}`, {
           method: "PATCH",
           headers: getHeaders(),
           body: JSON.stringify(data),
@@ -182,7 +183,7 @@ export function useOrders() {
       if (!token) throw new Error("Unauthorized");
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/orders/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/orders/${id}`, {
           method: "DELETE",
           headers: getHeaders(),
         });

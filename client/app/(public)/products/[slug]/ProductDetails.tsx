@@ -158,8 +158,11 @@ export default function ProductDetails({
             <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-2.5">
               Chọn màu sắc
             </h4>
-            <div className="flex gap-2">
-              {["#D12052", "#F45B26", "#111111", "#F8DE22"].map((color) => (
+            <div className="flex gap-2 flex-wrap">
+              {(product.materials_config?.colors && product.materials_config.colors.length > 0
+                ? product.materials_config.colors
+                : ["#D12052", "#F45B26", "#111111", "#F8DE22"]
+              ).map((color) => (
                 <div
                   key={color}
                   onClick={() => setSelectedColor(color)}

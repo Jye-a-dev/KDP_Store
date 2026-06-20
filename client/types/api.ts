@@ -60,6 +60,10 @@ export interface Product {
   model_3d_url: string | null;
   is_published: boolean;
   badge?: string | null;
+  materials_config?: {
+    colors: string[];
+    textures: string[];
+  };
 }
 
 export interface Category {

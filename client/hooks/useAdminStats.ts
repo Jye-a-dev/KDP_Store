@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Order, OrderStats, UserStats } from "@/types/api";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -20,9 +21,9 @@ export function useAdminStats() {
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const [ordersRes, orderStatsRes, userStatsRes] = await Promise.all([
-        fetch(`${API_URL}/orders?limit=5&sort_by=created_at&sort_order=DESC`, { headers }),
-        fetch(`${API_URL}/orders/count`, { headers }),
-        fetch(`${API_URL}/users/count`, { headers }),
+        fetchWithTimeout(`${API_URL}/orders?limit=5&sort_by=created_at&sort_order=DESC`, { headers }),
+        fetchWithTimeout(`${API_URL}/orders/count`, { headers }),
+        fetchWithTimeout(`${API_URL}/users/count`, { headers }),
       ]);
 
       if (!ordersRes.ok || !orderStatsRes.ok || !userStatsRes.ok) {

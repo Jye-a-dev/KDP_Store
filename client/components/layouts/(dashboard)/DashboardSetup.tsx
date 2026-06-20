@@ -25,6 +25,12 @@ export default function DashboardSetup({ children }: DashboardSetupProps) {
       router.replace("/login");
       return;
     }
+    // Handle invalid user roles to prevent black screens/loops
+    if (user && user.role !== "admin" && user.role !== "customer") {
+      logout();
+      router.replace("/login");
+      return;
+    }
     if (user?.role === "admin" && pathname === "/dashboard") {
       router.replace("/dashboard/admin");
     } else if (user?.role === "customer" && pathname === "/dashboard") {
@@ -33,7 +39,7 @@ export default function DashboardSetup({ children }: DashboardSetupProps) {
     if (user?.role === "customer" && pathname.startsWith("/dashboard/admin")) {
       router.replace("/dashboard/customer");
     }
-  }, [isLoading, isAuthenticated, user, pathname, router]);
+  }, [isLoading, isAuthenticated, user, pathname, router, logout]);
 
   if (isLoading) {
     return (

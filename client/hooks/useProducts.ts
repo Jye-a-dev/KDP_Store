@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Product, ProductStats, PaginatedResponse } from "@/types/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -47,7 +48,7 @@ export function useProducts() {
           url += `?${params.join("&")}`;
         }
 
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url);
         if (!res.ok) throw new Error("Failed to fetch products");
         const data = (await res.json()) as PaginatedResponse<Product> | Product[];
         const list = Array.isArray(data) ? data : data.data ?? [];
@@ -76,7 +77,7 @@ export function useProducts() {
         if (params.category_id !== undefined) query.set("category_id", String(params.category_id));
         if (params.is_published !== undefined) query.set("is_published", String(params.is_published));
 
-        const res = await fetch(`${API_URL}/products?${query.toString()}`, {
+        const res = await fetchWithTimeout(`${API_URL}/products?${query.toString()}`, {
           headers: getHeaders(),
         });
         if (!res.ok) throw new Error("Failed to fetch products");
@@ -101,7 +102,7 @@ export function useProducts() {
 
   const fetchProductStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/products/count`, { headers: getHeaders() });
+      const res = await fetchWithTimeout(`${API_URL}/products/count`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch product stats");
       const data = (await res.json()) as ProductStats;
       setProductStats(data);
@@ -117,7 +118,7 @@ export function useProducts() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/products`, {
+        const res = await fetchWithTimeout(`${API_URL}/products`, {
           method: "POST",
           headers: getHeaders(),
           body: JSON.stringify(productData),
@@ -142,7 +143,7 @@ export function useProducts() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/products/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/products/${id}`, {
           method: "PATCH",
           headers: getHeaders(),
           body: JSON.stringify(productData),
@@ -167,7 +168,7 @@ export function useProducts() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/products/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/products/${id}`, {
           method: "DELETE",
           headers: getHeaders(),
         });

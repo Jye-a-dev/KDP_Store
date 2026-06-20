@@ -42,6 +42,7 @@ export class PageContentsService implements OnModuleInit {
           'Nhận ngay thông báo về các đợt Sneaker Drop, nội thất 3D giới hạn và ưu đãi dành riêng cho thành viên.',
         newsletter_placeholder: 'Nhập email của bạn...',
         newsletter_btn: 'Đăng Ký',
+        newsletter_cta_url: '/products',
         customer_promo_badge: 'Z-CLUB Member',
         customer_promo_title: 'Ưu đãi dành riêng cho bạn',
         customer_promo_code: 'ZCLUB15',

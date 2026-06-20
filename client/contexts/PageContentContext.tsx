@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 export interface PageContent {
   announcement_bar: string;
@@ -13,6 +14,7 @@ export interface PageContent {
   newsletter_description: string;
   newsletter_placeholder: string;
   newsletter_btn: string;
+  newsletter_cta_url: string;
   customer_promo_badge: string;
   customer_promo_title: string;
   customer_promo_code: string;
@@ -32,6 +34,7 @@ const DEFAULT_CONTENT: PageContent = {
   newsletter_description: "Nhận ngay thông báo về các đợt Sneaker Drop, nội thất 3D giới hạn và ưu đãi dành riêng cho thành viên.",
   newsletter_placeholder: "Nhập email của bạn...",
   newsletter_btn: "Đăng Ký",
+  newsletter_cta_url: "/products",
   customer_promo_badge: "Z-CLUB Member",
   customer_promo_title: "Ưu đãi dành riêng cho bạn",
   customer_promo_code: "ZCLUB15",
@@ -61,7 +64,7 @@ export function PageContentProvider({ children }: { children: React.ReactNode })
   const fetchContent = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_URL}/page-contents`);
+      const res = await fetchWithTimeout(`${API_URL}/page-contents`);
       if (res.ok) {
         const data = await res.json();
         setContent({ ...DEFAULT_CONTENT, ...data });
@@ -87,7 +90,7 @@ export function PageContentProvider({ children }: { children: React.ReactNode })
       const token = localStorage.getItem(TOKEN_KEY);
       if (!token) return;
 
-      await fetch(`${API_URL}/page-contents/${key}`, {
+      await fetchWithTimeout(`${API_URL}/page-contents/${key}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -105,7 +108,7 @@ export function PageContentProvider({ children }: { children: React.ReactNode })
       const token = localStorage.getItem(TOKEN_KEY);
       if (!token) throw new Error("Unauthorized");
 
-      const res = await fetch(`${API_URL}/page-contents`, {
+      const res = await fetchWithTimeout(`${API_URL}/page-contents`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -129,7 +132,7 @@ export function PageContentProvider({ children }: { children: React.ReactNode })
       const token = localStorage.getItem(TOKEN_KEY);
       if (!token) throw new Error("Unauthorized");
 
-      const res = await fetch(`${API_URL}/page-contents/${key}`, {
+      const res = await fetchWithTimeout(`${API_URL}/page-contents/${key}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

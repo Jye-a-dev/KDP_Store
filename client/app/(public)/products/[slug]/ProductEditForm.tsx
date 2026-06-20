@@ -34,12 +34,17 @@ export default function ProductEditForm({
   const [editDescription, setEditDescription] = useState("");
   const [editStock, setEditStock] = useState("");
   const [editCategoryId, setEditCategoryId] = useState("");
-  const [editImages2d, setEditImages2d] = useState("");
+  const [editImagesList, setEditImagesList] = useState<string[]>([]);
+  const [editColorsList, setEditColorsList] = useState<string[]>([]);
   const [editModel3dUrl, setEditModel3dUrl] = useState("");
   const [editBadge, setEditBadge] = useState("None");
   const [editIsPublished, setEditIsPublished] = useState(true);
   const [inlineError, setInlineError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Temporary inputs
+  const [newColor, setNewColor] = useState("#000000");
+  const [newImageUrl, setNewImageUrl] = useState("");
 
   // Sync edit states when product data updates
   useEffect(() => {
@@ -59,12 +64,19 @@ export default function ProductEditForm({
       setEditBadge(product.badge ?? "None");
       setEditIsPublished(product.is_published ?? true);
 
-      const imagesVal = Array.isArray(product.images_2d)
-        ? product.images_2d.join(", ")
-        : typeof product.images_2d === "string"
-        ? product.images_2d
-        : "";
-      setEditImages2d(imagesVal);
+      let imagesVal: string[] = [];
+      if (Array.isArray(product.images_2d)) {
+        imagesVal = product.images_2d;
+      } else if (typeof product.images_2d === "string") {
+        try {
+          const parsed = JSON.parse(product.images_2d);
+          if (Array.isArray(parsed)) imagesVal = parsed;
+        } catch {
+          imagesVal = product.images_2d ? [product.images_2d] : [];
+        }
+      }
+      setEditImagesList(imagesVal);
+      setEditColorsList(product.materials_config?.colors || []);
     }
   }, [product]);
 
@@ -93,11 +105,6 @@ export default function ProductEditForm({
     setInlineError("");
     setIsSaving(true);
 
-    const imgArray = editImages2d
-      .split(",")
-      .map((img) => img.trim())
-      .filter((img) => img.length > 0);
-
     const body = {
       name: editName.trim(),
       sku: editSku.trim(),
@@ -107,9 +114,13 @@ export default function ProductEditForm({
       stock: Number(editStock),
       category_id: editCategoryId ? Number(editCategoryId) : null,
       is_published: editIsPublished,
-      images_2d: imgArray,
+      images_2d: editImagesList,
       model_3d_url: editModel3dUrl.trim() || null,
       badge: editBadge === "None" ? null : editBadge.trim(),
+      materials_config: {
+        colors: editColorsList,
+        textures: product.materials_config?.textures || [],
+      },
     };
 
     try {
@@ -266,17 +277,117 @@ export default function ProductEditForm({
         />
       </div>
 
-      {/* Images 2D list */}
-      <div className="flex flex-col gap-1.5">
+      {/* Colors Selection CRUD */}
+      <div className="flex flex-col gap-1.5 p-3 bg-gray-50 border-2 border-dashed border-[#111111]/20 rounded-2xl">
         <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111]">
-          Ảnh 2D (Ngăn cách bằng dấu phẩy)
+          🎨 Quản lý màu sắc ({editColorsList.length})
         </label>
-        <textarea
-          rows={2}
-          value={editImages2d}
-          onChange={(e) => setEditImages2d(e.target.value)}
-          className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
-        />
+        
+        {/* Existing Swatches */}
+        {editColorsList.length > 0 ? (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {editColorsList.map((color, idx) => (
+              <div 
+                key={idx}
+                className="group relative flex items-center gap-1.5 py-1 px-2.5 bg-white border-2 border-[#111111] rounded-lg text-[10px] font-extrabold font-mono shadow-[1px_1px_0px_#111111]"
+              >
+                <span className="w-3.5 h-3.5 rounded-full border border-black/20" style={{ backgroundColor: color }} />
+                <span>{color.toUpperCase()}</span>
+                <button
+                  type="button"
+                  onClick={() => setEditColorsList(editColorsList.filter((_, i) => i !== idx))}
+                  className="ml-1 text-[#D12052] font-black cursor-pointer hover:scale-125 transition-transform"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[10px] text-gray-400 font-bold uppercase py-1">Không có màu sắc nào được thêm.</p>
+        )}
+
+        {/* Add Color inputs */}
+        <div className="flex items-center gap-2 mt-1">
+          <input
+            type="color"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            className="w-8 h-8 rounded border border-gray-300 p-0 cursor-pointer"
+          />
+          <input
+            type="text"
+            placeholder="#HEX"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            className="flex-1 border-2 border-[#111111] py-1 px-2 rounded-lg text-[11px] font-extrabold font-mono outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (newColor.trim() && !editColorsList.includes(newColor.trim())) {
+                setEditColorsList([...editColorsList, newColor.trim()]);
+              }
+            }}
+            className="bg-[#111111] text-white text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg border-2 border-[#111111] hover:bg-gray-800 cursor-pointer active:scale-95 transition-transform"
+          >
+            Thêm màu
+          </button>
+        </div>
+      </div>
+
+      {/* Images List CRUD */}
+      <div className="flex flex-col gap-1.5 p-3 bg-gray-50 border-2 border-dashed border-[#111111]/20 rounded-2xl">
+        <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111]">
+          🖼️ Quản lý danh sách ảnh ({editImagesList.length})
+        </label>
+        
+        {/* Existing Images */}
+        {editImagesList.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2 max-h-48 overflow-y-auto pr-1">
+            {editImagesList.map((img, idx) => (
+              <div 
+                key={idx}
+                className="group relative flex flex-col items-center bg-white border-2 border-[#111111] rounded-lg overflow-hidden shadow-[2px_2px_0px_#111111] p-1"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img} alt="Preview" className="w-full h-16 object-contain" />
+                <button
+                  type="button"
+                  onClick={() => setEditImagesList(editImagesList.filter((_, i) => i !== idx))}
+                  className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs shadow-sm cursor-pointer border border-black/10"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[10px] text-gray-400 font-bold uppercase py-1">Chưa có ảnh nào.</p>
+        )}
+
+        {/* Add Image URL */}
+        <div className="flex gap-2 mt-1">
+          <input
+            type="text"
+            placeholder="URL ảnh mới..."
+            value={newImageUrl}
+            onChange={(e) => setNewImageUrl(e.target.value)}
+            className="flex-1 border-2 border-[#111111] py-1 px-2.5 rounded-lg text-[11px] font-semibold outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (newImageUrl.trim() && !editImagesList.includes(newImageUrl.trim())) {
+                setEditImagesList([...editImagesList, newImageUrl.trim()]);
+                setNewImageUrl("");
+              }
+            }}
+            className="bg-[#03AED2] text-white text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg border-2 border-[#111111] hover:bg-[#039ebf] cursor-pointer active:scale-95 transition-transform"
+          >
+            Thêm ảnh
+          </button>
+        </div>
       </div>
 
       {/* Description */}

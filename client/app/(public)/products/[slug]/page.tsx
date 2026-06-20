@@ -73,6 +73,11 @@ export default function ProductDetailPage() {
         }
         const data = await res.json();
         setProduct(data);
+        if (data.materials_config?.colors && data.materials_config.colors.length > 0) {
+          setSelectedColor(data.materials_config.colors[0]);
+        } else {
+          setSelectedColor("#D12052");
+        }
         if (data.model_3d_url) {
           setActiveTab("3d");
         } else {

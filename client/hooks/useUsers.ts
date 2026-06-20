@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { User, UserStats, PaginatedResponse } from "@/types/api";
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -48,7 +49,7 @@ export function useUsers() {
         if (params.role) query.set("role", params.role);
         if (params.is_active !== undefined) query.set("is_active", String(params.is_active));
 
-        const res = await fetch(`${API_URL}/users?${query.toString()}`, {
+        const res = await fetchWithTimeout(`${API_URL}/users?${query.toString()}`, {
           headers: getHeaders(),
         });
         if (!res.ok) throw new Error("Failed to fetch users");
@@ -73,7 +74,7 @@ export function useUsers() {
 
   const fetchUserStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API_URL}/users/count`, { headers: getHeaders() });
+      const res = await fetchWithTimeout(`${API_URL}/users/count`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch user stats");
       const data = (await res.json()) as UserStats;
       setUserStats(data);
@@ -88,7 +89,7 @@ export function useUsers() {
       if (!token) throw new Error("Unauthorized");
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/users/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/users/${id}`, {
           method: "PATCH",
           headers: getHeaders(),
           body: JSON.stringify(data),
@@ -110,7 +111,7 @@ export function useUsers() {
       if (!token) throw new Error("Unauthorized");
       setError(null);
       try {
-        const res = await fetch(`${API_URL}/users/${id}`, {
+        const res = await fetchWithTimeout(`${API_URL}/users/${id}`, {
           method: "DELETE",
           headers: getHeaders(),
         });

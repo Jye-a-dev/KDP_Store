@@ -9,6 +9,8 @@ import React, {
   type ReactNode,
 } from "react";
 
+import { fetchWithTimeout } from "@/utils/fetchWithTimeout";
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface AuthUser {
   id: string;
@@ -92,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ── login ──────────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetchWithTimeout(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -115,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string,
       phone?: string
     ) => {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const res = await fetchWithTimeout(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ full_name, email, password, phone }),
