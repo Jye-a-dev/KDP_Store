@@ -77,6 +77,13 @@ export class UpdateProductDto {
   })
   model_3d_url?: string;
 
+  @ApiPropertyOptional({
+    description: 'Nhãn/Huy hiệu sản phẩm mới',
+    example: 'Sale Off',
+    nullable: true,
+  })
+  badge?: string;
+
   @ApiPropertyOptional({ description: 'Tỉ lệ phóng to trục X', example: 1.1 })
   scale_x?: number;
 

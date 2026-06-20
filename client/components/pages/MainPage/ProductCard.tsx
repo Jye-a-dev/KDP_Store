@@ -13,11 +13,13 @@ interface Product {
   slug: string;
   sku: string;
   price: string;
+  discount_price?: string | number | null;
   description: string;
   stock: number;
   images_2d: string[] | string;
   model_3d_url: string | null;
   is_published: boolean;
+  badge?: string | null;
 }
 
 interface ProductCardProps {
@@ -86,20 +88,60 @@ export default function ProductCard({
   const imageUrl = getProductImage(product.images_2d);
   const isFurniture = !!product.model_3d_url;
   const priceVal = Math.round(Number(product.price));
+  const discountVal = product.discount_price ? Math.round(Number(product.discount_price)) : null;
+  const hasRealDiscount = discountVal !== null && discountVal > 0 && discountVal < priceVal;
 
-  const hasDiscount = product.id % 3 === 0;
-  const displayPrice = priceVal;
-  const oldPrice = Math.round(priceVal * 1.25);
+  const displayPrice = hasRealDiscount ? discountVal : priceVal;
+  const oldPrice = hasRealDiscount ? priceVal : Math.round(priceVal * 1.25);
+  const hasDiscount = hasRealDiscount || (product.id % 3 === 0);
 
-  let badgeColor = "bg-[#03AED2] text-white";
-  let badgeText = "New In";
+  let badgeColor = "";
+  let badgeText = "";
 
-  if (hasDiscount) {
-    badgeColor = "bg-[#D12052] text-[#F8DE22]";
-    badgeText = "Sale -20%";
-  } else if (product.id % 4 === 2) {
-    badgeColor = "bg-[#111111] text-white";
-    badgeText = "Limited";
+  if (product.badge && product.badge.trim() && product.badge.trim() !== "None") {
+    const rawBadge = product.badge.trim();
+    if (rawBadge === "Sale Off") {
+      if (hasRealDiscount) {
+        const pct = Math.round((1 - discountVal! / priceVal) * 100);
+        badgeText = `Sale -${pct}%`;
+      } else {
+        badgeText = "Sale Off";
+      }
+      badgeColor = "bg-[#D12052] text-[#F8DE22]";
+    } else if (rawBadge === "Limited") {
+      badgeText = "Limited";
+      badgeColor = "bg-[#111111] text-white";
+    } else if (rawBadge === "New In") {
+      badgeText = "New In";
+      badgeColor = "bg-[#03AED2] text-white";
+    } else {
+      badgeText = rawBadge;
+      const l = badgeText.toLowerCase();
+      if (l.includes("sale") || l.includes("off") || l.includes("%") || l.includes("giam")) {
+        badgeColor = "bg-[#D12052] text-[#F8DE22]";
+      } else if (l.includes("limited") || l.includes("gioi han")) {
+        badgeColor = "bg-[#111111] text-white";
+      } else {
+        badgeColor = "bg-[#03AED2] text-white";
+      }
+    }
+  } else if (product.badge === "None") {
+    badgeText = "";
+  } else {
+    if (hasRealDiscount) {
+      const pct = Math.round((1 - discountVal! / priceVal) * 100);
+      badgeColor = "bg-[#D12052] text-[#F8DE22]";
+      badgeText = `Sale -${pct}%`;
+    } else if (product.id % 3 === 0) {
+      badgeColor = "bg-[#D12052] text-[#F8DE22]";
+      badgeText = "Sale -20%";
+    } else if (product.id % 4 === 2) {
+      badgeColor = "bg-[#111111] text-white";
+      badgeText = "Limited";
+    } else if (product.id % 4 === 0) {
+      badgeColor = "bg-[#03AED2] text-white";
+      badgeText = "New In";
+    }
   }
 
   const handleCardClick = () => {
@@ -142,46 +184,52 @@ export default function ProductCard({
       {/* Image Wrap */}
       <div className="relative aspect-3/4 w-full overflow-hidden bg-[#f7f9fa] border border-[#e8ecef] rounded-xl mb-4">
         {/* Badge */}
-        <span className={`absolute top-3 left-3 px-3 py-1.5 text-[10px] uppercase font-bold tracking-wide z-10 shadow-md rounded-lg ${badgeColor}`}>
-          {badgeText}
-        </span>
+        {badgeText && (
+          <span className={`absolute top-3 left-3 px-3 py-1.5 text-[10px] uppercase font-bold tracking-wide z-10 shadow-md rounded-lg ${badgeColor}`}>
+            {badgeText}
+          </span>
+        )}
 
         {/* Wishlist / Admin buttons */}
         {isAdmin ? (
           <div className="absolute top-3 right-3 flex flex-col gap-1.5 z-20">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onEdit?.(product);
-              }}
-              className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
-              title="Sửa sản phẩm"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 13.5-13.5z" />
-              </svg>
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (window.confirm(`Bạn có chắc muốn xóa sản phẩm ${product.name}?`)) {
-                  onDelete?.(product.id);
-                }
-              }}
-              className="bg-[#D12052] text-white border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
-              title="Xóa sản phẩm"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-              </svg>
-            </button>
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit(product);
+                }}
+                className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                title="Sửa sản phẩm"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 13.5-13.5z" />
+                </svg>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (window.confirm(`Bạn có chắc muốn xóa sản phẩm ${product.name}?`)) {
+                    onDelete(product.id);
+                  }
+                }}
+                className="bg-[#D12052] text-white border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                title="Xóa sản phẩm"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+              </button>
+            )}
           </div>
         ) : (
           <button
             onClick={handleWishlistToggle}
-            className={`absolute top-3 right-3 bg-white/90 backdrop-blur-sm border shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 z-10 ${
+            className={`absolute top-3 right-3 bg-white/90 backdrop-blur-sm border shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 z-20 ${
               isLiked ? "text-[#D12052] border-[#D12052] bg-[#D12052]/10" : "text-gray-500 border-transparent hover:bg-[#D12052] hover:border-[#D12052] hover:text-white"
             }`}
           >

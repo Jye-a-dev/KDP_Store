@@ -22,4 +22,10 @@ export class UpdateCategoryDto {
     example: 'ghe-sofa-da',
   })
   slug?: string;
+
+  @ApiPropertyOptional({
+    description: 'Có hiển thị trên thanh navbar hay không',
+    example: true,
+  })
+  show_on_navbar?: boolean;
 }

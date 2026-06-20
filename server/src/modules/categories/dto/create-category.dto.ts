@@ -22,4 +22,11 @@ export class CreateCategoryDto {
     example: 'ghe-sofa',
   })
   slug?: string;
+
+  @ApiPropertyOptional({
+    description: 'Có hiển thị trên thanh navbar hay không',
+    example: false,
+    default: false,
+  })
+  show_on_navbar?: boolean;
 }

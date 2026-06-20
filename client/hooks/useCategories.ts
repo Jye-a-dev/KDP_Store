@@ -32,12 +32,17 @@ export function useCategories() {
   }, []);
 
   const createCategory = useCallback(
-    async (name: string, parentId?: number | null) => {
+    async (name: string, parentId?: number | null, showOnNavbar?: boolean, slug?: string) => {
       if (!token) throw new Error("Unauthorized");
       setIsLoading(true);
       setError(null);
       try {
-        const body = { name, parent_id: parentId ?? null };
+        const body = { 
+          name, 
+          parent_id: parentId ?? null, 
+          show_on_navbar: !!showOnNavbar, 
+          slug: slug?.trim() || undefined 
+        };
         const res = await fetch(`${API_URL}/categories`, {
           method: "POST",
           headers: {
@@ -61,12 +66,17 @@ export function useCategories() {
   );
 
   const updateCategory = useCallback(
-    async (id: number, name: string, parentId?: number | null) => {
+    async (id: number, name: string, parentId?: number | null, showOnNavbar?: boolean, slug?: string) => {
       if (!token) throw new Error("Unauthorized");
       setIsLoading(true);
       setError(null);
       try {
-        const body = { name, parent_id: parentId ?? null };
+        const body = { 
+          name, 
+          parent_id: parentId ?? null, 
+          show_on_navbar: !!showOnNavbar, 
+          slug: slug?.trim() || undefined 
+        };
         const res = await fetch(`${API_URL}/categories/${id}`, {
           method: "PATCH",
           headers: {

@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { Product } from "@/types/api";
 import ProductCard from "@/components/pages/MainPage/ProductCard";
+import CheckoutModal from "./CheckoutModal";
+import ProductMediaViewer from "./ProductMediaViewer";
+import ProductEditForm from "./ProductEditForm";
+import ProductDetails from "./ProductDetails";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -28,22 +32,33 @@ export default function ProductDetailPage() {
 
   // Checkout modal states
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [shippingName, setShippingName] = useState("");
-  const [shippingPhone, setShippingPhone] = useState("");
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("COD");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const productSlug = params?.slug;
 
-  // Pre-fill shipping info when user is loaded
-  useEffect(() => {
-    if (user) {
-      setShippingName(user.full_name || "");
-      setShippingPhone(user.phone || "");
+  // Inline edit state
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleDeleteInline = async () => {
+    if (!product) return;
+    if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`)) return;
+
+    try {
+      const res = await fetch(`${API_URL}/products/${product.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Lỗi khi xóa sản phẩm");
+      }
+
+      router.push("/");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Đã xảy ra lỗi khi xóa");
     }
-  }, [user]);
+  };
 
   // Load product detail by slug
   useEffect(() => {
@@ -138,10 +153,16 @@ export default function ProductDetailPage() {
       return;
     }
     if (!product) return;
+
+    const priceVal = Math.round(Number(product.price));
+    const discountVal = product.discount_price ? Math.round(Number(product.discount_price)) : null;
+    const hasRealDiscount = discountVal !== null && discountVal > 0 && discountVal < priceVal;
+    const finalPrice = hasRealDiscount ? discountVal! : (product.id % 3 === 0 ? Math.round(priceVal) : priceVal);
+
     addToCart({
       id: product.id,
       name: product.name,
-      price: Math.round(Number(product.price)),
+      price: finalPrice,
       color: selectedColor || "Mặc định",
       image: mainImage || images[0],
       slug: product.slug,
@@ -161,61 +182,7 @@ export default function ProductDetailPage() {
     setIsCheckoutOpen(true);
   };
 
-  const handleCheckoutSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!product) return;
-    if (!shippingName || !shippingPhone || !shippingAddress) {
-      setCheckoutError("Vui lòng nhập đầy đủ thông tin giao hàng.");
-      return;
-    }
-    setCheckoutError(null);
-    setIsSubmitting(true);
 
-    try {
-      const body = {
-        user_id: user?.id,
-        items: [
-          {
-            product_id: product.id,
-            quantity: quantity,
-            color: selectedColor || "Mặc định",
-          },
-        ],
-        shipping_fee: 30000,
-        shipping_name: shippingName,
-        shipping_phone: shippingPhone,
-        shipping_address: shippingAddress,
-        payment_info: {
-          method: paymentMethod,
-          status: "pending",
-        },
-      };
-
-      const res = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errData = (await res.json()) as { message?: string };
-        throw new Error(errData.message || "Đặt hàng thất bại.");
-      }
-
-      setSuccessMsg("🎉 Đặt hàng thành công! Đang chuyển hướng...");
-      setIsCheckoutOpen(false);
-      setTimeout(() => {
-        router.push("/dashboard/customer/orders");
-      }, 2000);
-    } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : "Đã có lỗi xảy ra");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -272,200 +239,52 @@ export default function ProductDetailPage() {
 
         {/* Detail Box */}
         <div className="bg-white border-2 border-[#111111] rounded-2xl shadow-[8px_8px_0px_#111111] overflow-hidden flex flex-col md:flex-row mb-16">
-          
-          {/* Left Column: Media Viewer */}
-          <div className="w-full md:w-1/2 bg-[#f7f9fa] border-b-2 md:border-b-0 md:border-r-2 border-[#111111] relative flex flex-col justify-between p-6">
-            {/* Header Actions */}
-            <div className="flex gap-2 mb-4 z-10">
-              <button
-                onClick={() => setActiveTab("2d")}
-                className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === "2d" ? "bg-[#111111] text-white" : "bg-white text-[#111111]"
-                }`}
-              >
-                Hình Ảnh 2D
-              </button>
-              {isFurniture && (
-                <button
-                  onClick={() => setActiveTab("3d")}
-                  className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    activeTab === "3d" ? "bg-[#111111] text-white" : "bg-white text-[#111111]"
-                  }`}
-                >
-                  Trải Nghiệm 3D Interactive
-                </button>
-              )}
-            </div>
 
-            {/* Media Content */}
-            <div className="flex-1 flex items-center justify-center min-h-87.5 md:min-h-112.5">
-              {activeTab === "2d" ? (
-                <div className="w-full flex flex-col items-center gap-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={mainImage || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80"}
-                    alt={product.name}
-                    className="max-h-80 object-contain rounded-xl border border-gray-200 bg-white p-2"
-                  />
-                  {images.length > 1 && (
-                    <div className="flex gap-2 flex-wrap justify-center">
-                      {images.map((img, idx) => (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          key={idx}
-                          src={img}
-                          alt="Thumbnail"
-                          onClick={() => setMainImage(img)}
-                          className={`w-12 h-12 object-cover rounded-lg border-2 cursor-pointer transition-all ${
-                            mainImage === img ? "border-[#D12052] scale-105" : "border-[#111111] opacity-75 hover:opacity-100"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="w-full h-full min-h-87.5 flex items-center justify-center">
-                  {/* @ts-ignore */}
-                  <model-viewer
-                    src={modelUrl}
-                    camera-controls
-                    auto-rotate
-                    ar
-                    shadow-intensity="1"
-                    style={{ width: "100%", height: "400px", outline: "none" }}
-                    className="bg-transparent"
-                  >
-                    {/* @ts-ignore */}
-                  </model-viewer>
-                </div>
-              )}
-            </div>
-            
-            {isFurniture && activeTab === "3d" && (
-              <p className="text-[10px] text-gray-500 text-center font-bold uppercase mt-2">
-                💡 Giữ chuột trái và kéo để xoay mô hình • Cuộn để phóng to
-              </p>
-            )}
-          </div>
+          {/* Left Column: Media Viewer */}
+          <ProductMediaViewer
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            isFurniture={isFurniture}
+            productName={product.name}
+            mainImage={mainImage}
+            setMainImage={setMainImage}
+            images={images}
+            modelUrl={modelUrl}
+          />
 
           {/* Right Column: Information & Actions */}
           <div className="w-full md:w-1/2 p-8 flex flex-col justify-between">
-            <div className="flex flex-col gap-5">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D12052] bg-[#D12052]/10 px-2.5 py-1 rounded">
-                  {getCategoryName(product.category_id)}
-                </span>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#777] ml-2">
-                  SKU: {product.sku}
-                </span>
-              </div>
-
-              {/* Product Title */}
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold text-[#111111] uppercase tracking-wide mt-1">
-                  {product.name}
-                </h1>
-                
-                {/* Price */}
-                <div className="flex items-center gap-3 mt-3">
-                  <span className="text-3xl font-black text-[#D12052]">
-                    {Math.round(Number(product.price)).toLocaleString("vi-VN")}đ
-                  </span>
-                  <span className="text-sm text-[#aaa] line-through">
-                    {Math.round(Number(product.price) * 1.25).toLocaleString("vi-VN")}đ
-                  </span>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="border-t border-b border-gray-100 py-4 my-2">
-                <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-2">
-                  Mô tả sản phẩm
-                </h4>
-                <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                  {product.description || "Sản phẩm thiết kế độc quyền KDP Store. Phù hợp cho phong cách trẻ trung, năng động và xu hướng mới."}
-                </p>
-              </div>
-
-              {/* Options */}
-              <div className="flex flex-col gap-4">
-                {/* Color Selector */}
-                <div>
-                  <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-2.5">
-                    Chọn màu sắc
-                  </h4>
-                  <div className="flex gap-2">
-                    {["#D12052", "#F45B26", "#111111", "#F8DE22"].map((color) => (
-                      <div
-                        key={color}
-                        onClick={() => setSelectedColor(color)}
-                        className={`w-7 h-7 rounded-full border-2 cursor-pointer shadow-sm transition-all hover:scale-110 ${
-                          selectedColor === color ? "border-[#03AED2] scale-105 ring-2 ring-offset-1 ring-black/10" : "border-black/15"
-                        }`}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quantity */}
-                <div>
-                  <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#111111] mb-2.5">
-                    Số lượng
-                  </h4>
-                  <div className="inline-flex items-center border-2 border-[#111111] rounded-xl overflow-hidden shadow-[2px_2px_0px_#111111] bg-white">
-                    <button
-                      onClick={() => setQuantity(q => Math.max(q - 1, 1))}
-                      className="px-3.5 py-1.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-sm"
-                    >
-                      -
-                    </button>
-                    <span className="px-5 py-1.5 text-xs font-extrabold font-mono border-l-2 border-r-2 border-[#111111]">
-                      {quantity}
-                    </span>
-                    <button
-                      onClick={() => setQuantity(q => q + 1)}
-                      className="px-3.5 py-1.5 bg-white font-bold hover:bg-gray-100 cursor-pointer text-sm"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* CTAs */}
-            <div className="mt-8">
-              {successMsg && (
-                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-500 text-emerald-700 text-xs font-semibold rounded-xl">
-                  {successMsg}
-                </div>
-              )}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleAddToCart}
-                  className="flex-1 py-4 bg-[#F8DE22] text-[#111111] font-bold text-xs uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[3px_3px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                  </svg>
-                  Thêm vào giỏ hàng
-                </button>
-                <button
-                  onClick={handleBuyNow}
-                  className="flex-1 py-4 bg-[#D12052] text-white font-bold text-xs uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[3px_3px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                  </svg>
-                  Mua Ngay
-                </button>
-              </div>
-            </div>
-
+            {isEditing ? (
+              <ProductEditForm
+                product={product}
+                setProduct={setProduct}
+                categories={categories}
+                token={token}
+                setIsEditing={setIsEditing}
+                onSuccess={(msg) => {
+                  setSuccessMsg(msg);
+                  setTimeout(() => setSuccessMsg(""), 3000);
+                }}
+                router={router}
+                productSlug={productSlug}
+                API_URL={API_URL}
+              />
+            ) : (
+              <ProductDetails
+                product={product}
+                getCategoryName={getCategoryName}
+                selectedColor={selectedColor}
+                setSelectedColor={setSelectedColor}
+                quantity={quantity}
+                setQuantity={setQuantity}
+                user={user}
+                setIsEditing={setIsEditing}
+                handleDeleteInline={handleDeleteInline}
+                handleAddToCart={handleAddToCart}
+                handleBuyNow={handleBuyNow}
+                successMsg={successMsg}
+              />
+            )}
           </div>
         </div>
 
@@ -509,151 +328,17 @@ export default function ProductDetailPage() {
 
       </div>
 
-      {/* Checkout Modal */}
-      {isCheckoutOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border-4 border-[#111111] rounded-3xl w-full max-w-lg shadow-[8px_8px_0px_#111111] overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="bg-[#111111] text-white px-6 py-4 flex justify-between items-center border-b-4 border-[#111111]">
-              <h3 className="font-extrabold uppercase tracking-wider text-sm">Xác Nhận Đặt Hàng Nhanh</h3>
-              <button
-                onClick={() => setIsCheckoutOpen(false)}
-                className="text-white/70 hover:text-white text-lg font-bold transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <form onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-              {checkoutError && (
-                <div className="p-3.5 bg-[#D12052]/10 border-2 border-[#D12052] text-[#D12052] text-xs font-bold rounded-xl">
-                  ⚠️ {checkoutError}
-                </div>
-              )}
-
-              {/* Product Info Summary */}
-              <div className="flex gap-4 p-3 bg-[#f7f9fa] border-2 border-[#111111] rounded-2xl">
-                <div className="w-16 h-16 bg-white border-2 border-[#111111] rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={mainImage || images[0]} alt={product.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-xs text-[#111111] truncate uppercase">{product.name}</h4>
-                  <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500 font-bold uppercase">
-                    <span>Màu:</span>
-                    <span className="w-3 h-3 rounded-full border border-black/10 inline-block" style={{ backgroundColor: selectedColor || "#D12052" }} />
-                    <span className="ml-2">SL: {quantity}</span>
-                  </div>
-                  <p className="font-extrabold text-[#D12052] text-xs mt-1">
-                    {(Math.round(Number(product.price)) * quantity).toLocaleString("vi-VN")}đ
-                  </p>
-                </div>
-              </div>
-
-              {/* Delivery Form */}
-              <div className="flex flex-col gap-3.5">
-                <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Thông Tin Giao Hàng</h5>
-                
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Họ và tên người nhận</label>
-                  <input
-                    type="text"
-                    required
-                    value={shippingName}
-                    onChange={(e) => setShippingName(e.target.value)}
-                    placeholder="Nguyễn Văn A"
-                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Số điện thoại</label>
-                  <input
-                    type="tel"
-                    required
-                    value={shippingPhone}
-                    onChange={(e) => setShippingPhone(e.target.value)}
-                    placeholder="09XXXXXXXX"
-                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-extrabold uppercase text-[#555] tracking-wider">Địa chỉ chi tiết</label>
-                  <textarea
-                    required
-                    rows={2}
-                    value={shippingAddress}
-                    onChange={(e) => setShippingAddress(e.target.value)}
-                    placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
-                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa] resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Payment Method Selector */}
-              <div className="flex flex-col gap-2">
-                <h5 className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Phương Thức Thanh Toán</h5>
-                <div className="grid grid-cols-2 gap-2">
-                  <div
-                    onClick={() => setPaymentMethod("COD")}
-                    className={`border-2 rounded-xl p-3 flex items-center gap-2 cursor-pointer transition-all ${
-                      paymentMethod === "COD" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
-                    }`}
-                  >
-                    <input type="radio" checked={paymentMethod === "COD"} readOnly className="accent-[#03AED2]" />
-                    <span className="text-xs uppercase tracking-wider">COD (Tiền mặt)</span>
-                  </div>
-                  <div
-                    onClick={() => setPaymentMethod("MOMO")}
-                    className={`border-2 rounded-xl p-3 flex items-center gap-2 cursor-pointer transition-all ${
-                      paymentMethod === "MOMO" ? "border-[#03AED2] bg-[#03AED2]/5 font-bold" : "border-[#111111] hover:bg-neutral-50"
-                    }`}
-                  >
-                    <input type="radio" checked={paymentMethod === "MOMO"} readOnly className="accent-[#03AED2]" />
-                    <span className="text-xs uppercase tracking-wider">MoMo</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bill Details */}
-              <div className="border-t border-[#111111]/10 pt-4 flex flex-col gap-2">
-                <div className="flex justify-between text-xs font-bold text-gray-500">
-                  <span>Tiền sản phẩm:</span>
-                  <span>{(Math.round(Number(product.price)) * quantity).toLocaleString("vi-VN")}đ</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold text-gray-500">
-                  <span>Phí vận chuyển:</span>
-                  <span>30.000đ</span>
-                </div>
-                <div className="flex justify-between text-sm font-extrabold text-[#111111] border-t border-[#111111] pt-2">
-                  <span>TỔNG THANH TOÁN:</span>
-                  <span>{((Math.round(Number(product.price)) * quantity) + 30000).toLocaleString("vi-VN")}đ</span>
-                </div>
-              </div>
-
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3.5 mt-2 bg-[#D12052] text-white font-extrabold text-xs uppercase tracking-widest rounded-xl border-2 border-[#111111] shadow-[4px_4px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[3px_3px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                ) : (
-                  <>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Xác Nhận Thanh Toán
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        product={product}
+        quantity={quantity}
+        selectedColor={selectedColor}
+        mainImage={mainImage}
+        token={token}
+        user={user}
+        onSuccess={(msg) => setSuccessMsg(msg)}
+      />
     </div>
   );
 }

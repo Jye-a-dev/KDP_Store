@@ -21,6 +21,9 @@ export default function ProductModal({
   const [name, setName] = useState(product?.name ?? "");
   const [sku, setSku] = useState(product?.sku ?? "");
   const [price, setPrice] = useState(product?.price ? String(product.price) : "");
+  const [discountPrice, setDiscountPrice] = useState(
+    product?.discount_price ? String(product.discount_price) : ""
+  );
   const [description, setDescription] = useState(product?.description ?? "");
   const [stock, setStock] = useState(product?.stock ? String(product.stock) : "10");
   const [categoryId, setCategoryId] = useState<string>(
@@ -37,6 +40,7 @@ export default function ProductModal({
         : ""
   );
   const [model3dUrl, setModel3dUrl] = useState(product?.model_3d_url ?? "");
+  const [badge, setBadge] = useState(product?.badge ?? "None");
   const [error, setError] = useState("");
 
   // Automatically generate SKU and Slug-like SKU when name changes (only in create mode)
@@ -65,6 +69,14 @@ export default function ProductModal({
       setError("Giá sản phẩm phải là số dương hợp lệ");
       return;
     }
+    if (discountPrice.trim() && (isNaN(Number(discountPrice)) || Number(discountPrice) < 0)) {
+      setError("Giá khuyến mãi phải là số dương hợp lệ");
+      return;
+    }
+    if (discountPrice.trim() && price.trim() && Number(discountPrice) >= Number(price)) {
+      setError("Giá khuyến mãi phải nhỏ hơn giá bán gốc");
+      return;
+    }
 
     setError("");
 
@@ -77,12 +89,14 @@ export default function ProductModal({
       name: name.trim(),
       sku: sku.trim(),
       price: price.trim(),
+      discount_price: discountPrice.trim() ? discountPrice.trim() : null,
       description: description.trim(),
       stock: Number(stock),
       category_id: categoryId ? Number(categoryId) : undefined,
       is_published: isPublished,
       images_2d: imgArray,
       model_3d_url: model3dUrl.trim() || null,
+      badge: badge === "None" ? null : badge.trim(),
     };
 
     try {
@@ -152,11 +166,11 @@ export default function ProductModal({
             </div>
           </div>
 
-          {/* Giá & Tồn kho */}
+          {/* Giá & Giá khuyến mãi */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
-                Giá bán (VNĐ) <span className="text-[#D12052]">*</span>
+                Giá bán gốc (VNĐ) <span className="text-[#D12052]">*</span>
               </label>
               <input
                 type="text"
@@ -168,6 +182,22 @@ export default function ProductModal({
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                Giá khuyến mãi (VNĐ)
+              </label>
+              <input
+                type="text"
+                value={discountPrice}
+                onChange={(e) => setDiscountPrice(e.target.value)}
+                placeholder="VD: 280000"
+                className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
+              />
+            </div>
+          </div>
+
+          {/* Số lượng tồn kho & Huy hiệu */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
                 Số lượng tồn kho
               </label>
               <input
@@ -176,6 +206,21 @@ export default function ProductModal({
                 onChange={(e) => setStock(e.target.value)}
                 className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa]"
               />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                Huy hiệu / Nhãn sản phẩm
+              </label>
+              <select
+                value={badge}
+                onChange={(e) => setBadge(e.target.value)}
+                className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa] bg-white cursor-pointer"
+              >
+                <option value="None">Không có (None)</option>
+                <option value="New In">Mới (New In)</option>
+                <option value="Sale Off">Giảm giá (Sale Off)</option>
+                <option value="Limited">Giới hạn (Limited)</option>
+              </select>
             </div>
           </div>
 

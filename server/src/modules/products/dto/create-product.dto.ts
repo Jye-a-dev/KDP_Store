@@ -111,6 +111,13 @@ export class CreateProductDto {
   model_3d_url?: string;
 
   @ApiPropertyOptional({
+    description: 'Nhãn/Huy hiệu sản phẩm (VD: Sale Off, New In, Limited)',
+    example: 'New In',
+    nullable: true,
+  })
+  badge?: string;
+
+  @ApiPropertyOptional({
     description: 'Tỉ lệ phóng to/thu nhỏ trục X',
     example: 1.0,
     default: 1.0,

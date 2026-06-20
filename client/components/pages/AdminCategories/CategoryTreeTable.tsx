@@ -51,7 +51,7 @@ export default function CategoryTreeTable({
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#111111]/10">
-                {["Tên Danh Mục", "Slug", "Cấp", "Hành Động"].map((h) => (
+                {["Tên Danh Mục", "Slug", "Cấp", "Navbar", "Hành Động"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-[10px] font-extrabold uppercase tracking-widest text-[#aaa]">
                     {h}
                   </th>

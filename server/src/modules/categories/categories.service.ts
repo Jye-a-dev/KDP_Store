@@ -68,10 +68,10 @@ export class CategoriesService {
     }
 
     const { rows } = await this.db.query<Category>(
-      `INSERT INTO categories (parent_id, name, slug)
-       VALUES ($1, $2, $3)
-       RETURNING id, parent_id, name, slug, created_at`,
-      [dto.parent_id ?? null, dto.name, slug],
+      `INSERT INTO categories (parent_id, name, slug, show_on_navbar)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, parent_id, name, slug, show_on_navbar, created_at`,
+      [dto.parent_id ?? null, dto.name, slug, dto.show_on_navbar ?? false],
     );
     return rows[0];
   }
@@ -115,7 +115,7 @@ export class CategoriesService {
     const total = parseInt(countResult.rows[0].total, 10);
 
     const { rows } = await this.db.query<Category>(
-      `SELECT id, parent_id, name, slug, created_at
+      `SELECT id, parent_id, name, slug, show_on_navbar, created_at
        FROM categories
        ${where}
        ORDER BY ${sortBy} ${sortOrder}
@@ -137,7 +137,7 @@ export class CategoriesService {
   // ─────────────────────────────────────────────
   async findOne(id: number): Promise<Category> {
     const { rows } = await this.db.query<Category>(
-      `SELECT id, parent_id, name, slug, created_at
+      `SELECT id, parent_id, name, slug, show_on_navbar, created_at
        FROM categories WHERE id = $1`,
       [id],
     );
@@ -213,6 +213,12 @@ export class CategoriesService {
       idx++;
     }
 
+    if (dto.show_on_navbar !== undefined) {
+      fields.push(`show_on_navbar = $${idx}`);
+      params.push(dto.show_on_navbar);
+      idx++;
+    }
+
     if (fields.length === 0) return this.findOne(id);
 
     params.push(id);
@@ -220,7 +226,7 @@ export class CategoriesService {
     const { rows } = await this.db.query<Category>(
       `UPDATE categories SET ${fields.join(', ')}
        WHERE id = $${idx}
-       RETURNING id, parent_id, name, slug, created_at`,
+       RETURNING id, parent_id, name, slug, show_on_navbar, created_at`,
       params,
     );
     return rows[0];

@@ -58,6 +58,13 @@ export default function CategoryTreeRow({
           )}
         </td>
         <td className="px-4 py-3">
+          {node.show_on_navbar ? (
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-sans">Hiện</span>
+          ) : (
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-sans">Ẩn</span>
+          )}
+        </td>
+        <td className="px-4 py-3">
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               type="button"

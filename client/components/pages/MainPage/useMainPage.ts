@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCategories } from "@/hooks/useCategories";
 import { useProducts } from "@/hooks/useProducts";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +11,7 @@ export function useMainPage() {
   const { user, token } = useAuth();
   const { categories, tree, fetchAll: fetchCategories, deleteCategory } = useCategories();
   const { products, isLoading, fetchProducts, deleteProduct } = useProducts();
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -40,19 +41,27 @@ export function useMainPage() {
   }, [fetchCategories]);
 
   useEffect(() => {
-    fetchProducts(selectedCategory, debouncedSearch);
-  }, [selectedCategory, debouncedSearch, fetchProducts]);
+    fetchProducts(null, debouncedSearch);
+  }, [debouncedSearch, fetchProducts]);
 
   const getCategoryName = (categoryId: number) => {
     const cat = categories.find((c) => c.id === categoryId);
     return cat ? cat.name : "Sản phẩm";
   };
 
+  const router = useRouter();
+
   const handleCategorySelect = (categoryId: number | null) => {
-    setSelectedCategory(categoryId);
-    const element = document.getElementById("products-section");
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+    if (categoryId === null) {
+      const element = document.getElementById("products-section");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      const cat = categories.find((c) => c.id === categoryId);
+      if (cat) {
+        router.push(`/categories/${cat.slug}`);
+      }
     }
   };
 
@@ -60,7 +69,6 @@ export function useMainPage() {
     try {
       await deleteCategory(id);
       fetchCategories();
-      setSelectedCategory(null);
     } catch (err) {
       console.error(err);
     }
@@ -69,7 +77,7 @@ export function useMainPage() {
   const handleDeleteProduct = async (id: number) => {
     try {
       await deleteProduct(id);
-      fetchProducts(selectedCategory, debouncedSearch);
+      fetchProducts(null, debouncedSearch);
     } catch (err) {
       console.error(err);
     }
@@ -77,10 +85,9 @@ export function useMainPage() {
 
   const resetFilters = () => {
     setSearchQuery("");
-    setSelectedCategory(null);
   };
 
-  const refreshProducts = () => fetchProducts(selectedCategory, debouncedSearch);
+  const refreshProducts = () => fetchProducts(null, debouncedSearch);
 
   return {
     token,
@@ -89,8 +96,8 @@ export function useMainPage() {
     products,
     isLoading,
     isAdmin,
-    selectedCategory,
-    setSelectedCategory,
+    selectedCategory: null as number | null,
+    setSelectedCategory: handleCategorySelect,
     searchQuery,
     setSearchQuery,
     productModal,

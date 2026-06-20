@@ -3,6 +3,7 @@ export interface Category {
   parent_id: number | null;
   name: string;
   slug: string;
+  show_on_navbar: boolean;
   created_at: Date;
 }
 

@@ -53,11 +53,13 @@ export interface Product {
   slug: string;
   sku: string;
   price: string;
+  discount_price?: string | number | null;
   description: string;
   stock: number;
   images_2d: string[] | string;
   model_3d_url: string | null;
   is_published: boolean;
+  badge?: string | null;
 }
 
 export interface Category {
@@ -65,6 +67,7 @@ export interface Category {
   parent_id: number | null;
   name: string;
   slug: string;
+  show_on_navbar: boolean;
   created_at?: string;
 }
 

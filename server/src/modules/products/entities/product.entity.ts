@@ -22,6 +22,7 @@ export interface Product {
   is_published: boolean;
   images_2d: string[];
   model_3d_url: string | null;
+  badge: string | null;
   scale_x: number;
   scale_y: number;
   scale_z: number;

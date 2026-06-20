@@ -65,6 +65,7 @@ export default function ProductCatalog({
       />
 
       <ProductListContent
+        categories={categories}
         isLoading={isLoading}
         products={products}
         isAdmin={isAdmin}
@@ -72,6 +73,7 @@ export default function ProductCatalog({
         onEditProduct={onEditProduct}
         onDeleteProduct={onDeleteProduct}
         onResetFilters={onResetFilters}
+        searchQuery={searchQuery}
       />
     </section>
   );

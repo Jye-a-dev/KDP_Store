@@ -1,57 +1,229 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useCategories } from "@/hooks/useCategories";
+import { Category } from "@/types/api";
 
 export default function PublicNavbar() {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const { setIsCartOpen, cartCount } = useCart();
+  const { categories, fetchAll } = useCategories();
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<number, boolean>>({});
+  const overflowRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (overflowRef.current && !overflowRef.current.contains(event.target as Node)) {
+        setIsOverflowOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const toggleCategoryExpand = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleLogout = () => {
     logout();
+    setIsMobileMenuOpen(false);
     router.push("/");
   };
 
-  const navLinkClass =
-    "font-bold uppercase text-[12px] tracking-[0.5px] text-[#111111] hover:text-[#03AED2] relative after:content-[''] after:absolute after:w-0 after:h-0.75 after:-bottom-1.25 after:left-0 after:bg-[#03AED2] after:transition-all after:duration-300 hover:after:w-full";
+  const handleCategoryClick = (slug: string) => {
+    setIsOverflowOpen(false);
+    setIsMobileMenuOpen(false);
+    router.push(`/categories/${slug}`);
+  };
+
+  const getNavLinkClass = (isActive: boolean) => {
+    return `font-bold uppercase text-[12px] tracking-[0.5px] relative after:content-[''] after:absolute after:h-0.75 after:-bottom-1.25 after:left-0 after:bg-[#03AED2] after:transition-all after:duration-300 hover:after:w-full ${isActive
+      ? "text-[#03AED2] after:w-full"
+      : "text-[#111111] hover:text-[#03AED2] after:w-0"
+      }`;
+  };
+
+  // Filter categories to those with show_on_navbar === true
+  const navbarCategories = categories.filter((c) => c.show_on_navbar);
+
+  // Group into root and children.
+  // A category is a root nav item if its parent_id is null OR its parent is not in the navbar list
+  const rootNavCategories = navbarCategories.filter(
+    (c) => c.parent_id === null || !navbarCategories.some((p) => p.id === c.parent_id)
+  );
+
+  const getChildrenNavCategories = (parentId: number) => {
+    return navbarCategories.filter((c) => c.parent_id === parentId);
+  };
+
+  // Limit visible top-level items to prevent breaking the layout, collapsing overflow to a dots menu
+  const maxVisible = 4;
+  const visibleRoots = rootNavCategories.slice(0, maxVisible);
+  const overflowRoots = rootNavCategories.slice(maxVisible);
+
+  const isCategoryActive = (cat: Category) => {
+    if (pathname === `/categories/${cat.slug}`) return true;
+    const children = getChildrenNavCategories(cat.id);
+    return children.some((child) => pathname === `/categories/${child.slug}`);
+  };
+
+  const isOverflowActive = overflowRoots.some((cat) => {
+    if (pathname === `/categories/${cat.slug}`) return true;
+    const children = getChildrenNavCategories(cat.id);
+    return children.some((child) => pathname === `/categories/${child.slug}`);
+  });
 
   return (
-    <div className="w-full px-[5%] pt-4 sticky top-0 z-50">
-      <header className="mx-auto max-w-7xl flex justify-between items-center px-8 py-3.5 rounded-full border-2 border-[#111111] bg-white/95 backdrop-blur-md shadow-[4px_4px_0px_#111111]">
+    <div className="w-full px-[4%] md:px-[5%] pt-4 sticky top-0 z-100">
+      <header className="mx-auto max-w-7xl flex justify-between items-center px-4 md:px-8 py-2.5 md:py-3.5 rounded-full border-2 border-[#111111] bg-white/95 backdrop-blur-md shadow-[4px_4px_0px_#111111]">
         {/* Gradient Logo */}
         <Link
           href="/"
-          className="logo text-[24px] font-extrabold uppercase tracking-wide bg-linear-to-r from-[#D12052] to-[#F45B26] bg-clip-text text-transparent"
+          className="logo text-[20px] md:text-[24px] font-extrabold uppercase tracking-wide bg-linear-to-r from-[#D12052] to-[#F45B26] bg-clip-text text-transparent"
         >
           KDP Store
         </Link>
 
         {/* Navigation Links */}
         <nav className="hidden md:block">
-          <ul className="flex gap-8.75 list-none">
-            <li>
-              <Link href="#products-section" className={navLinkClass}>
-                Hàng Mới
-              </Link>
-            </li>
-            <li>
-              <Link href="#products-section" className={navLinkClass}>
-                Streetwear
-              </Link>
-            </li>
-            <li>
-              <Link href="#products-section" className={navLinkClass}>
-                Activewear
-              </Link>
-            </li>
-            <li>
-              <Link href="#products-section" className={navLinkClass}>
-                Phụ Kiện
-              </Link>
-            </li>
+          <ul className="flex gap-8.75 list-none items-center">
+            {visibleRoots.map((cat) => {
+              const children = getChildrenNavCategories(cat.id);
+              const hasChildren = children.length > 0;
+              const active = isCategoryActive(cat);
+
+              if (hasChildren) {
+                return (
+                  <li key={cat.id} className="relative group/dropdown py-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.slug)}
+                      className={`${getNavLinkClass(active)} flex items-center gap-1 cursor-pointer outline-none`}
+                    >
+                      {cat.name}
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="transition-transform group-hover/dropdown:rotate-180">
+                        <path d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {/* Dropdown Menu */}
+                    <div className="absolute top-full left-0 mt-1.5 w-48 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 hidden group-hover/dropdown:block animate-in fade-in slide-in-from-top-1 duration-200 z-50">
+                      {children.map((child) => {
+                        const childActive = pathname === `/categories/${child.slug}`;
+                        return (
+                          <button
+                            key={child.id}
+                            onClick={() => handleCategoryClick(child.slug)}
+                            className={`w-full text-left px-4 py-2.5 text-[11px] font-extrabold uppercase transition-colors block cursor-pointer outline-none ${childActive
+                              ? "bg-[#f7f9fa] text-[#03AED2]"
+                              : "text-[#111111] hover:bg-[#f7f9fa] hover:text-[#03AED2]"
+                              }`}
+                          >
+                            {child.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={cat.id} className="py-2">
+                  <button
+                    onClick={() => handleCategoryClick(cat.slug)}
+                    className={`${getNavLinkClass(active)} cursor-pointer outline-none`}
+                  >
+                    {cat.name}
+                  </button>
+                </li>
+              );
+            })}
+
+            {/* Overflow Dropdown Menu */}
+            {overflowRoots.length > 0 && (
+              <li ref={overflowRef} className="relative group/overflow py-2">
+                <button
+                  type="button"
+                  onClick={() => setIsOverflowOpen(!isOverflowOpen)}
+                  className={`flex items-center justify-center cursor-pointer outline-none w-8 h-8 rounded-full border-2 border-[#111111] shadow-[1.5px_1.5px_0px_#111111] hover:bg-[#F8DE22] group-hover/overflow:bg-[#F8DE22] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all ${isOverflowActive || isOverflowOpen ? "bg-[#F8DE22]" : "bg-[#f7f9fa]"
+                    }`}
+                  title="Xem thêm danh mục"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={`transition-transform duration-200 ${isOverflowOpen ? "rotate-90" : "group-hover/overflow:rotate-90"
+                    }`}>
+                    <circle cx="12" cy="12" r="1.5" />
+                    <circle cx="6" cy="12" r="1.5" />
+                    <circle cx="18" cy="12" r="1.5" />
+                  </svg>
+                </button>
+                {/* Dropdown Menu for Overflow items */}
+                <div className={`absolute top-full right-0 mt-1.5 w-52 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 animate-in fade-in slide-in-from-top-1 duration-200 z-50 ${isOverflowOpen ? "block" : "hidden group-hover/overflow:block"
+                  }`}>
+                  {overflowRoots.map((cat) => {
+                    const children = getChildrenNavCategories(cat.id);
+                    const hasChildren = children.length > 0;
+                    const catActive = isCategoryActive(cat);
+
+                    return (
+                      <div key={cat.id} className="relative group/nested">
+                        <button
+                          onClick={() => handleCategoryClick(cat.slug)}
+                          className={`w-full text-left px-4 py-2.5 text-[11px] font-extrabold uppercase transition-colors flex justify-between items-center cursor-pointer outline-none ${catActive
+                            ? "bg-[#f7f9fa] text-[#03AED2]"
+                            : "text-[#111111] hover:bg-[#f7f9fa] hover:text-[#03AED2]"
+                            }`}
+                        >
+                          <span>{cat.name}</span>
+                          {hasChildren && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="-rotate-90">
+                              <path d="M19 9l-7 7-7-7" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Nested sub-dropdown for child categories in the overflow */}
+                        {hasChildren && (
+                          <div className="absolute right-full top-0 mr-1.5 w-48 bg-white border-2 border-[#111111] rounded-xl shadow-[4px_4px_0px_#111111] py-2 hidden group-hover/nested:block animate-in fade-in slide-in-from-right-1 duration-200 z-50">
+                            {children.map((child) => {
+                              const childActive = pathname === `/categories/${child.slug}`;
+                              return (
+                                <button
+                                  key={child.id}
+                                  onClick={() => handleCategoryClick(child.slug)}
+                                  className={`w-full text-left px-4 py-2 text-[11px] font-extrabold uppercase transition-colors block cursor-pointer outline-none ${childActive
+                                    ? "bg-[#f7f9fa] text-[#03AED2]"
+                                    : "text-[#111111] hover:bg-[#f7f9fa] hover:text-[#03AED2]"
+                                    }`}
+                                >
+                                  {child.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -74,39 +246,196 @@ export default function PublicNavbar() {
             </button>
           )}
 
-          {isLoading ? (
-            /* Skeleton while hydrating */
-            <div className="h-9 w-28 rounded-full bg-[#111111]/10 animate-pulse" />
-          ) : isAuthenticated && user ? (
-            /* Logged-in state */
-            <div className="flex items-center gap-3">
+          {/* Desktop Auth Section */}
+          <div className="hidden md:flex items-center gap-3">
+            {isLoading ? (
+              /* Skeleton while hydrating */
+              <div className="h-9 w-28 rounded-full bg-[#111111]/10 animate-pulse" />
+            ) : isAuthenticated && user ? (
+              /* Logged-in state */
+              <div className="flex items-center gap-3">
+                <Link
+                  href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
+                  className="hidden lg:block font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer"
+                  title={user.role === "admin" ? "Vào trang quản trị Admin" : "Vào trang quản trị cá nhân"}
+                >
+                  👋 {user.full_name.split(" ").pop()} {user.role === "admin" && "(Admin)"}
+                </Link>
+                <button
+                  id="navbar-logout-btn"
+                  onClick={handleLogout}
+                  className="bg-[#D12052] text-white font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 rounded-full border-2 border-[#D12052] shadow-[2px_2px_0px_#F8DE22] hover:bg-[#F8DE22] hover:text-[#111111] hover:border-[#111111] transition-all duration-300 cursor-pointer"
+                >
+                  Đăng Xuất
+                </button>
+              </div>
+            ) : (
+              /* Guest state */
               <Link
-                href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
-                className="hidden sm:block font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer"
-                title={user.role === "admin" ? "Vào trang quản trị Admin" : "Vào trang quản trị cá nhân"}
+                id="navbar-login-btn"
+                href="/login"
+                className="bg-[#111111] text-white font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 rounded-full border-2 border-[#111111] shadow-[2px_2px_0px_#F8DE22] hover:bg-[#F8DE22] hover:text-[#111111] transition-all duration-300"
               >
-                👋 {user.full_name.split(" ").pop()} {user.role === "admin" && "(Admin)"}
+                Đăng Nhập / Đăng Ký
               </Link>
-              <button
-                id="navbar-logout-btn"
-                onClick={handleLogout}
-                className="bg-[#D12052] text-white font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 rounded-full border-2 border-[#D12052] shadow-[2px_2px_0px_#F8DE22] hover:bg-[#F8DE22] hover:text-[#111111] hover:border-[#111111] transition-all duration-300 cursor-pointer"
-              >
-                Đăng Xuất
-              </button>
-            </div>
-          ) : (
-            /* Guest state */
-            <Link
-              id="navbar-login-btn"
-              href="/login"
-              className="bg-[#111111] text-white font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 rounded-full border-2 border-[#111111] shadow-[2px_2px_0px_#F8DE22] hover:bg-[#F8DE22] hover:text-[#111111] transition-all duration-300"
-            >
-              Đăng Nhập / Đăng Ký
-            </Link>
-          )}
+            )}
+          </div>
+
+          {/* Hamburger Menu Button (Mobile/Tablet) */}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex md:hidden items-center justify-center cursor-pointer outline-none w-9 h-9 rounded-full border-2 border-[#111111] bg-white shadow-[2px_2px_0px_#111111] hover:bg-[#F8DE22] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all"
+            title="Mở menu"
+          >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <line x1="4" y1="12" x2="20" y2="12"></line>
+              <line x1="4" y1="6" x2="20" y2="6"></line>
+              <line x1="4" y1="18" x2="20" y2="18"></line>
+            </svg>
+          </button>
         </div>
       </header>
+
+      {/* Mobile Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-100 flex md:hidden">
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-[#111111]/40 backdrop-blur-xs transition-opacity duration-300"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-80 max-w-xs bg-white border-r-4 border-[#111111] h-full flex flex-col p-6 shadow-[5px_0px_0px_#111111] animate-in slide-in-from-left duration-300 z-10">
+            {/* Header */}
+            <div className="flex justify-between items-center pb-5 border-b-2 border-[#111111]/10">
+              <span className="text-[20px] font-black uppercase tracking-wide bg-linear-to-r from-[#D12052] to-[#F45B26] bg-clip-text text-transparent">
+                Menu
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-8 h-8 rounded-full border-2 border-[#111111] bg-white flex items-center justify-center cursor-pointer hover:bg-[#D12052] hover:text-white shadow-[1.5px_1.5px_0px_#111111] transition-all"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Navigation Category list */}
+            <div className="flex-1 overflow-y-auto py-6">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#aaa] mb-4">Danh Mục</div>
+              <ul className="flex flex-col gap-3 list-none">
+                {/* Home link */}
+                <li>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      router.push("/");
+                    }}
+                    className={`w-full text-left py-2 text-[12px] font-black uppercase transition-colors block cursor-pointer outline-none ${pathname === "/" ? "text-[#03AED2]" : "text-[#111111] hover:text-[#03AED2]"
+                      }`}
+                  >
+                    Trang Chủ
+                  </button>
+                </li>
+                {rootNavCategories.map((cat) => {
+                  const children = getChildrenNavCategories(cat.id);
+                  const hasChildren = children.length > 0;
+                  const active = isCategoryActive(cat);
+                  const isExpanded = !!expandedCategories[cat.id];
+
+                  return (
+                    <li key={cat.id} className="border-b border-[#111111]/5 pb-2">
+                      <div className="flex justify-between items-center">
+                        <button
+                          onClick={() => handleCategoryClick(cat.slug)}
+                          className={`flex-1 text-left py-2 text-[12px] font-black uppercase transition-colors block cursor-pointer outline-none ${active ? "text-[#03AED2]" : "text-[#111111] hover:text-[#03AED2]"
+                            }`}
+                        >
+                          {cat.name}
+                        </button>
+                        {hasChildren && (
+                          <button
+                            onClick={(e) => toggleCategoryExpand(cat.id, e)}
+                            className="w-7 h-7 rounded border border-[#111111] flex items-center justify-center bg-[#f7f9fa] hover:bg-[#F8DE22] shadow-[1px_1px_0px_#111111]"
+                          >
+                            <svg
+                              width="10"
+                              height="10"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                            >
+                              <path d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Nested subcategories inside mobile drawer */}
+                      {hasChildren && isExpanded && (
+                        <ul className="pl-4 mt-2 flex flex-col gap-2 border-l-2 border-[#111111]/10 list-none">
+                          {children.map((child) => {
+                            const childActive = pathname === `/categories/${child.slug}`;
+                            return (
+                              <li key={child.id}>
+                                <button
+                                  onClick={() => handleCategoryClick(child.slug)}
+                                  className={`w-full text-left py-1 text-[11px] font-bold uppercase transition-colors block cursor-pointer outline-none ${childActive ? "text-[#03AED2]" : "text-[#111111] hover:text-[#03AED2]"
+                                    }`}
+                                >
+                                  {child.name}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {/* Footer / Auth section */}
+            <div className="pt-5 border-t-2 border-[#111111]/10 flex flex-col gap-4">
+              {isLoading ? (
+                <div className="h-9 w-full rounded-full bg-[#111111]/10 animate-pulse" />
+              ) : isAuthenticated && user ? (
+                <>
+                  <Link
+                    href={user.role === "admin" ? "/dashboard/admin" : "/dashboard/customer"}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="font-bold uppercase text-[11px] tracking-wider text-[#555555] hover:text-[#03AED2] transition-colors cursor-pointer text-center"
+                  >
+                    👋 {user.full_name} {user.role === "admin" && "(Admin)"}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full bg-[#D12052] text-white font-bold uppercase text-[11px] tracking-[0.5px] py-3 rounded-full border-2 border-[#D12052] shadow-[2px_2px_0px_#F8DE22] hover:bg-[#F8DE22] hover:text-[#111111] hover:border-[#111111] transition-all duration-300 cursor-pointer"
+                  >
+                    Đăng Xuất
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full bg-[#111111] text-white font-bold uppercase text-[11px] tracking-[0.5px] py-3 rounded-full border-2 border-[#111111] shadow-[2px_2px_0px_#F8DE22] hover:bg-[#F8DE22] hover:text-[#111111] transition-all duration-300 text-center"
+                >
+                  Đăng Nhập / Đăng Ký
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
