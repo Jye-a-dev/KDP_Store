@@ -5,7 +5,11 @@ export async function fetchWithTimeout(
   const { timeout = 8000, ...rest } = options;
 
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+  let isTimeout = false;
+  const id = setTimeout(() => {
+    isTimeout = true;
+    controller.abort();
+  }, timeout);
 
   try {
     const response = await fetch(resource, {
@@ -13,6 +17,11 @@ export async function fetchWithTimeout(
       signal: controller.signal,
     });
     return response;
+  } catch (err: unknown) {
+    if (isTimeout || (err instanceof DOMException && err.name === "AbortError")) {
+      throw new Error(`Yêu cầu bị quá thời gian chờ (${timeout}ms). Vui lòng kiểm tra kết nối Server.`);
+    }
+    throw err;
   } finally {
     clearTimeout(id);
   }

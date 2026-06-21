@@ -40,37 +40,58 @@ export default function FeaturedCollections({
 
       <div
         className={`grid grid-cols-1 gap-6 px-[5%] w-full ${
-          featured.length === 1
-            ? "md:grid-cols-1"
-            : featured.length === 2
-            ? "md:grid-cols-2"
-            : featured.length >= 4
-            ? "md:grid-cols-4"
-            : "md:grid-cols-3"
+          featured.length < 4
+            ? "md:grid-cols-3"
+            : "md:grid-cols-4"
         }`}
       >
-        {featured.map((cat, i) => (
-          <div
-            key={cat.id}
-            onClick={() => handleCategorySelect(cat.id)}
-            className="group relative h-60 md:h-80 bg-[#f7f9fa] overflow-hidden cursor-pointer border-2 border-[#111111]"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
-              alt={cat.name}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 group-hover:rotate-1"
-            />
-            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent flex flex-col justify-end p-5 md:p-6 text-left">
-              <h3 className="text-white uppercase text-[18px] md:text-[20px] font-bold mb-1">
-                {cat.name}
-              </h3>
-              <span className="text-[#F8DE22] text-[11px] md:text-[12px] uppercase font-bold">
-                Xem bộ sưu tập &rarr;
-              </span>
+        {featured.map((cat, i) => {
+          let gridSpan = "";
+          let cardHeight = "h-60 md:h-80";
+          
+          if (featured.length >= 4) {
+            if (i === 0) {
+              gridSpan = "md:col-span-2 md:row-span-2";
+              cardHeight = "h-96 md:h-[500px]";
+            } else if (i === 1) {
+              gridSpan = "md:col-span-2 md:row-span-1";
+              cardHeight = "h-48 md:h-[238px]";
+            } else {
+              gridSpan = "md:col-span-1 md:row-span-1";
+              cardHeight = "h-48 md:h-[238px]";
+            }
+          }
+
+          return (
+            <div
+              key={cat.id}
+              onClick={() => handleCategorySelect(cat.id)}
+              className={`group relative ${cardHeight} ${gridSpan} bg-[#f7f9fa] overflow-hidden cursor-pointer border-3 border-[#111111] shadow-[6px_6px_0px_#111111] hover:shadow-[10px_10px_0px_#111111] hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0px_#111111] transition-all duration-300`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
+                alt={cat.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-5 md:p-6 text-left">
+                {i === 0 && featured.length >= 4 && (
+                  <span className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] text-[9px] font-black uppercase px-2 py-0.5 self-start mb-2 shadow-[1px_1px_0px_#111111]">
+                    Hot Collection
+                  </span>
+                )}
+                <h3 className={`text-white uppercase font-black mb-1 drop-shadow-[1.5px_1.5px_0px_rgba(0,0,0,0.8)] ${
+                  i === 0 && featured.length >= 4 ? "text-[22px] md:text-[26px]" : "text-[18px] md:text-[20px]"
+                }`}>
+                  {cat.name}
+                </h3>
+                <span className="text-[#F8DE22] text-[11px] md:text-[12px] uppercase font-bold flex items-center gap-1">
+                  Xem bộ sưu tập &rarr;
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

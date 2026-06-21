@@ -74,6 +74,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Ping backend every 5 minutes to keep API connection warm
+  useEffect(() => {
+    const pingBackend = async () => {
+      try {
+        await fetch(API_URL);
+      } catch (err) {
+        console.error("Failed to ping backend:", err);
+      }
+    };
+    pingBackend();
+    const intervalId = setInterval(pingBackend, 5 * 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   const _persist = (t: string, u: AuthUser) => {
     localStorage.setItem(TOKEN_KEY, t);
     localStorage.setItem(USER_KEY, JSON.stringify(u));

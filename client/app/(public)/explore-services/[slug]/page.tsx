@@ -98,7 +98,7 @@ function HtmlEditor({ value, onChange }: HtmlEditorProps) {
             >
               U
             </button>
-            <div className="w-[1px] h-6 bg-[#111111]/20 mx-1" />
+            <div className="w-px h-6 bg-[#111111]/20 mx-1" />
             <button
               type="button"
               onMouseDown={(e) => {
@@ -132,7 +132,7 @@ function HtmlEditor({ value, onChange }: HtmlEditorProps) {
             >
               P
             </button>
-            <div className="w-[1px] h-6 bg-[#111111]/20 mx-1" />
+            <div className="w-px h-6 bg-[#111111]/20 mx-1" />
             <button
               type="button"
               onMouseDown={(e) => {
@@ -155,7 +155,7 @@ function HtmlEditor({ value, onChange }: HtmlEditorProps) {
             >
               1. List
             </button>
-            <div className="w-[1px] h-6 bg-[#111111]/20 mx-1" />
+            <div className="w-px h-6 bg-[#111111]/20 mx-1" />
             <button
               type="button"
               onMouseDown={(e) => {
@@ -203,7 +203,7 @@ function HtmlEditor({ value, onChange }: HtmlEditorProps) {
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          className={`p-4 min-h-[350px] outline-none prose max-w-none text-[#222] font-semibold text-xs leading-relaxed font-sans bg-white ${
+          className={`p-4 min-h-87.5 outline-none prose max-w-none text-[#222] font-semibold text-xs leading-relaxed font-sans bg-white ${
             isHtmlMode ? "hidden" : "block"
           }`}
           style={{ minHeight: "350px" }}
@@ -211,7 +211,7 @@ function HtmlEditor({ value, onChange }: HtmlEditorProps) {
         <textarea
           value={htmlValue}
           onChange={handleHtmlChange}
-          className={`w-full p-4 min-h-[350px] font-mono text-xs text-amber-200 bg-[#1e1e1e] outline-none border-none leading-relaxed ${
+          className={`w-full p-4 min-h-87.5 font-mono text-xs text-amber-200 bg-[#1e1e1e] outline-none border-none leading-relaxed ${
             isHtmlMode ? "block" : "hidden"
           }`}
           style={{ minHeight: "350px", resize: "vertical" }}

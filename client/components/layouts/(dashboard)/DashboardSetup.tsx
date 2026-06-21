@@ -73,12 +73,12 @@ export default function DashboardSetup({ children }: DashboardSetupProps) {
       />
 
       {/* ── Main content ── */}
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen min-w-0">
         {/* Mobile top bar */}
         <DashboardNavbar user={user} isAdmin={isAdmin} />
 
         {/* Page content */}
-        <main className="flex-1 p-5 md:p-8">{children}</main>
+        <main className="flex-1 p-5 pb-24 md:pb-8 md:p-8">{children}</main>
 
         {/* Mobile bottom nav */}
         <DashboardFooter isAdmin={isAdmin} navItems={navItems} />
