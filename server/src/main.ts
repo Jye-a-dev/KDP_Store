@@ -9,7 +9,7 @@ async function bootstrap() {
   app.enableCors();
 
   // Cấu hình static folder phục vụ files (như hình ảnh, model 3D) ngoài src code
-  app.useStaticAssets(path.join(__dirname, '..', 'uploads'), {
+  app.useStaticAssets(path.join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
   });
 
