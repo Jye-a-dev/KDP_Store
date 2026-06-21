@@ -5,6 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { Pool } from 'pg';
+import * as bcrypt from 'bcrypt';
 import { PG_CONNECTION } from '../../database/pg.provider';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -41,6 +42,11 @@ export class UsersService {
       throw new ConflictException(`Email "${dto.email}" đã tồn tại`);
     }
 
+    let passwordHash = dto.password_hash ?? null;
+    if (passwordHash && !passwordHash.startsWith('$2b$')) {
+      passwordHash = await bcrypt.hash(passwordHash, 10);
+    }
+
     const { rows } = await this.db.query<User>(
       `INSERT INTO users
          (email, password_hash, full_name, phone, avatar_url, role, is_active, addresses)
@@ -48,7 +54,7 @@ export class UsersService {
        RETURNING id, email, full_name, phone, avatar_url, role, is_active, addresses, created_at, updated_at`,
       [
         dto.email,
-        dto.password_hash ?? null,
+        passwordHash,
         dto.full_name,
         dto.phone ?? null,
         dto.avatar_url ?? null,
@@ -157,6 +163,10 @@ export class UsersService {
           `Email "${dto.email}" đã được dùng bởi user khác`,
         );
       }
+    }
+
+    if (dto.password_hash && !dto.password_hash.startsWith('$2b$')) {
+      dto.password_hash = await bcrypt.hash(dto.password_hash, 10);
     }
 
     const fields: string[] = [];

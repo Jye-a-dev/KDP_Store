@@ -55,6 +55,8 @@ export interface Product {
   price: string;
   discount_price?: string | number | null;
   original_price?: string | number | null;
+  sale_start_date?: string | null;
+  sale_end_date?: string | null;
   condition?: string;
   import_date?: string;
   description: string;
@@ -85,6 +87,7 @@ export interface Category {
   name: string;
   slug: string;
   show_on_navbar: boolean;
+  sort_order?: number;
   created_at?: string;
 }
 

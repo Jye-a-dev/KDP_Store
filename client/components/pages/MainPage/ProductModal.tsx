@@ -5,9 +5,17 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
+const formatDateTimeLocal = (dateStr?: string | Date | null) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  const tzoffset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzoffset).toISOString().slice(0, 16);
+};
+
 interface ProductModalProps {
   mode: "create" | "edit";
-  product?: Product;
+  product?: Product | null;
   categories: Category[];
   onClose: () => void;
   onSaved: () => void;
@@ -55,6 +63,16 @@ export default function ProductModal({
       ? new Date(product.import_date).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0]
   );
+  const [saleStartDate, setSaleStartDate] = useState(
+    product?.sale_start_date ? formatDateTimeLocal(product.sale_start_date) : ""
+  );
+  const [saleEndDate, setSaleEndDate] = useState(
+    product?.sale_end_date ? formatDateTimeLocal(product.sale_end_date) : ""
+  );
+  const [colors, setColors] = useState<string[]>(
+    product?.materials_config?.colors || []
+  );
+  const [colorInput, setColorInput] = useState("#03aed2");
   const [error, setError] = useState("");
 
   // Helper states for adding images from multi-sources
@@ -194,6 +212,8 @@ export default function ProductModal({
       original_price: originalPrice.trim() ? originalPrice.trim() : null,
       condition: condition.trim(),
       import_date: importDate ? new Date(importDate).toISOString() : undefined,
+      sale_start_date: saleStartDate ? new Date(saleStartDate).toISOString() : null,
+      sale_end_date: saleEndDate ? new Date(saleEndDate).toISOString() : null,
       description: description.trim(),
       stock: Number(stock),
       category_id: categoryId ? Number(categoryId) : undefined,
@@ -201,6 +221,10 @@ export default function ProductModal({
       images_2d: imgArray,
       model_3d_url: model3dUrl.trim() || null,
       badge: badge === "None" ? null : badge.trim(),
+      materials_config: {
+        colors: colors,
+        textures: product?.materials_config?.textures || [],
+      },
     };
 
     try {
@@ -297,6 +321,42 @@ export default function ProductModal({
               />
             </div>
           </div>
+
+          {/* Thời hạn Khuyến mãi */}
+          {discountPrice.trim() && (
+            <div className="bg-amber-50/50 p-4 border-2 border-dashed border-[#F8DE22]/40 rounded-2xl flex flex-col gap-3">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-700 flex items-center gap-1">
+                ⏱️ Thời hạn Khuyến mãi
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                    Từ ngày
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={saleStartDate}
+                    onChange={(e) => setSaleStartDate(e.target.value)}
+                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none bg-white cursor-pointer"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                    Đến ngày
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={saleEndDate}
+                    onChange={(e) => setSaleEndDate(e.target.value)}
+                    className="border-2 border-[#111111] py-2 px-3 rounded-xl text-xs font-semibold outline-none bg-white cursor-pointer"
+                  />
+                </div>
+              </div>
+              <p className="text-[9.5px] text-amber-700/80 font-bold leading-normal">
+                💡 Hệ thống sẽ tự động hiển thị giá bán gốc khi nằm ngoài thời hạn trên. Nếu để trống, khuyến mãi sẽ luôn có hiệu lực.
+              </p>
+            </div>
+          )}
 
           {/* Thông tin Second-hand */}
           <div className="bg-neutral-50 p-4 border-2 border-dashed border-[#111111]/20 rounded-2xl flex flex-col gap-3">
@@ -403,6 +463,79 @@ export default function ProductModal({
                 <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#03AED2]"></div>
                 <span className="ml-2 text-xs font-bold text-gray-700">Công khai</span>
               </label>
+            </div>
+          </div>
+
+          {/* Quản lý màu sắc (Color CRUD) */}
+          <div className="flex flex-col gap-1.5 border-2 border-[#111111] p-4 rounded-2xl bg-white shadow-[3px_3px_0px_#111111]">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111] flex items-center gap-1.5">
+              🎨 Danh sách màu sắc sản phẩm
+            </label>
+            
+            {/* List of active colors */}
+            <div className="flex flex-wrap gap-2.5 my-2">
+              {colors.length === 0 ? (
+                <span className="text-[11px] text-gray-400 font-semibold italic">Chưa chọn màu nào (Sẽ hiển thị màu mặc định)</span>
+              ) : (
+                colors.map((color, idx) => (
+                  <div
+                    key={`${color}-${idx}`}
+                    className="flex items-center gap-1.5 border-2 border-[#111111] bg-neutral-50 px-2 py-1 rounded-xl shadow-[1.5px_1.5px_0px_#111111]"
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-black/20"
+                      style={{ backgroundColor: color }}
+                    />
+                    <code className="text-[10px] font-bold font-mono">{color.toUpperCase()}</code>
+                    <button
+                      type="button"
+                      onClick={() => setColors(colors.filter((_, i) => i !== idx))}
+                      className="text-gray-400 hover:text-[#D12052] font-black text-xs cursor-pointer ml-1 select-none transition-colors"
+                      title="Xóa màu này"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add new color picker + input */}
+            <div className="flex gap-2 items-center mt-1">
+              <input
+                type="color"
+                value={colorInput}
+                onChange={(e) => setColorInput(e.target.value)}
+                className="w-8 h-8 rounded-lg border-2 border-[#111111] cursor-pointer bg-white shrink-0 p-0.5"
+              />
+              <input
+                type="text"
+                value={colorInput.toUpperCase()}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (!val.startsWith("#")) val = "#" + val;
+                  setColorInput(val.slice(0, 7));
+                }}
+                maxLength={7}
+                placeholder="#000000"
+                className="border-2 border-[#111111] py-1.5 px-3 rounded-xl text-xs font-mono outline-none focus:bg-[#f7f9fa] w-24 text-center"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const cleaned = colorInput.trim().toLowerCase();
+                  if (/^#[0-9a-f]{6}$/i.test(cleaned)) {
+                    if (!colors.map(c => c.toLowerCase()).includes(cleaned)) {
+                      setColors([...colors, cleaned]);
+                    }
+                  } else {
+                    alert("Mã màu hex không hợp lệ! Ví dụ: #03AED2");
+                  }
+                }}
+                className="px-4 py-1.5 bg-[#F8DE22] border-2 border-[#111111] rounded-xl text-[10px] font-extrabold uppercase cursor-pointer shadow-[1.5px_1.5px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0.5px_0.5px_0px_#111111]"
+              >
+                Thêm màu
+              </button>
             </div>
           </div>
 

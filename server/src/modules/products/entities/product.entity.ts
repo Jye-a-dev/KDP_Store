@@ -17,6 +17,8 @@ export interface Product {
   sku: string;
   price: number;
   discount_price: number | null;
+  sale_start_date: Date | null;
+  sale_end_date: Date | null;
   description: string | null;
   stock: number;
   is_published: boolean;

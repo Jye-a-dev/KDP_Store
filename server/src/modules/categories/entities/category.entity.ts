@@ -4,6 +4,7 @@ export interface Category {
   name: string;
   slug: string;
   show_on_navbar: boolean;
+  sort_order: number;
   created_at: Date;
 }
 

@@ -47,6 +47,7 @@ CREATE TABLE categories (
     parent_id INT REFERENCES categories(id) ON DELETE SET NULL,
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
+    sort_order INT DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -59,6 +60,8 @@ CREATE TABLE products (
     price DECIMAL(12, 2) NOT NULL,
     discount_price DECIMAL(12, 2),
     original_price DECIMAL(12, 2),
+    sale_start_date TIMESTAMP WITH TIME ZONE,
+    sale_end_date TIMESTAMP WITH TIME ZONE,
     condition VARCHAR(100) DEFAULT 'Mới 95%',
     import_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     description TEXT,

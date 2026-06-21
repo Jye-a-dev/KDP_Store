@@ -42,6 +42,8 @@ export class ProductsService implements OnModuleInit {
         ALTER TABLE products ADD COLUMN IF NOT EXISTS condition VARCHAR(100) DEFAULT 'Mới 95%';
         ALTER TABLE products ADD COLUMN IF NOT EXISTS import_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS original_price DECIMAL(12, 2);
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_start_date TIMESTAMP WITH TIME ZONE;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_end_date TIMESTAMP WITH TIME ZONE;
       `);
     } catch (err) {
       console.error(
@@ -104,11 +106,11 @@ export class ProductsService implements OnModuleInit {
 
     const { rows } = await this.db.query<Product>(
       `INSERT INTO products (
-         category_id, name, slug, sku, price, discount_price, description, stock, is_published,
+         category_id, name, slug, sku, price, discount_price, sale_start_date, sale_end_date, description, stock, is_published,
          images_2d, model_3d_url, badge, scale_x, scale_y, scale_z, rotation_x, rotation_y, rotation_z,
          materials_config, camera_config, original_price, condition, import_date
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
        RETURNING *`,
       [
         dto.category_id ?? null,
@@ -117,6 +119,8 @@ export class ProductsService implements OnModuleInit {
         dto.sku,
         dto.price,
         dto.discount_price ?? null,
+        dto.sale_start_date ?? null,
+        dto.sale_end_date ?? null,
         dto.description ?? null,
         dto.stock ?? 0,
         dto.is_published ?? true,
@@ -160,7 +164,15 @@ export class ProductsService implements OnModuleInit {
     }
 
     if (query.category_id) {
-      conditions.push(`category_id = $${idx}`);
+      conditions.push(`category_id IN (
+        WITH RECURSIVE cat_tree AS (
+          SELECT id FROM categories WHERE id = $${idx}
+          UNION ALL
+          SELECT c.id FROM categories c
+          JOIN cat_tree ct ON c.parent_id = ct.id
+        )
+        SELECT id FROM cat_tree
+      )`);
       params.push(Number(query.category_id));
       idx++;
     }
@@ -302,6 +314,8 @@ export class ProductsService implements OnModuleInit {
       'sku',
       'price',
       'discount_price',
+      'sale_start_date',
+      'sale_end_date',
       'description',
       'stock',
       'is_published',
@@ -388,7 +402,15 @@ export class ProductsService implements OnModuleInit {
     }
 
     if (query.category_id) {
-      conditions.push(`category_id = $${idx}`);
+      conditions.push(`category_id IN (
+        WITH RECURSIVE cat_tree AS (
+          SELECT id FROM categories WHERE id = $${idx}
+          UNION ALL
+          SELECT c.id FROM categories c
+          JOIN cat_tree ct ON c.parent_id = ct.id
+        )
+        SELECT id FROM cat_tree
+      )`);
       params.push(Number(query.category_id));
       idx++;
     }

@@ -68,7 +68,7 @@ export class OrdersService {
 
         // Query khóa dòng (SELECT FOR UPDATE) để tránh tranh chấp đồng thời
         const prodRes = await client.query<Product>(
-          'SELECT id, name, price, discount_price, stock, is_published FROM products WHERE id = $1 FOR UPDATE',
+          'SELECT id, name, price, discount_price, sale_start_date, sale_end_date, stock, is_published FROM products WHERE id = $1 FOR UPDATE',
           [item.product_id],
         );
         const product = prodRes.rows[0];
@@ -92,12 +92,17 @@ export class OrdersService {
           );
         }
 
-        // Xác định giá mua (ưu tiên giá khuyến mãi)
-        const activePrice =
-          product.discount_price !== null &&
-          product.discount_price !== undefined
-            ? Number(product.discount_price)
-            : Number(product.price);
+        // Xác định giá mua (kiểm tra hạn khuyến mãi)
+        let activePrice = Number(product.price);
+        const now = new Date();
+        const hasDiscount = product.discount_price !== null && product.discount_price !== undefined;
+        const isSaleActive = hasDiscount &&
+          (!product.sale_start_date || new Date(product.sale_start_date) <= now) &&
+          (!product.sale_end_date || new Date(product.sale_end_date) >= now);
+
+        if (isSaleActive) {
+          activePrice = Number(product.discount_price);
+        }
 
         totalAmount += activePrice * orderQuantity;
 

@@ -21,6 +21,18 @@ export interface UpdateUserData {
   role?: "customer" | "admin";
   avatar_url?: string;
   addresses?: UserAddress[];
+  password_hash?: string;
+}
+
+export interface CreateUserData {
+  email: string;
+  password_hash?: string;
+  full_name: string;
+  phone?: string;
+  avatar_url?: string;
+  role?: "customer" | "admin";
+  is_active?: boolean;
+  addresses?: UserAddress[];
 }
 
 export function useUsers() {
@@ -129,6 +141,28 @@ export function useUsers() {
     [token, getHeaders]
   );
 
+  const createUser = useCallback(
+    async (data: CreateUserData) => {
+      if (!token) throw new Error("Unauthorized");
+      setError(null);
+      try {
+        const res = await fetchWithTimeout(`${API_URL}/users`, {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          const body = (await res.json()) as { message?: string };
+          throw new Error(body.message ?? "Failed to create user");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+        throw err;
+      }
+    },
+    [token, getHeaders]
+  );
+
   return {
     users,
     userStats,
@@ -139,5 +173,6 @@ export function useUsers() {
     fetchUserStats,
     updateUser,
     deleteUser,
+    createUser,
   };
 }

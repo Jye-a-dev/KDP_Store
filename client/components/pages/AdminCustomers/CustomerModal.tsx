@@ -5,11 +5,13 @@ import { User, UserAddress } from "@/types/api";
 import { UpdateUserData } from "@/hooks/useUsers";
 
 interface CustomerModalProps {
-  user: User;
-  initialMode: "details" | "edit";
+  user?: User;
+  initialMode: "details" | "edit" | "create";
   onClose: () => void;
   onSaved: () => void;
-  onUpdate: (id: string, data: UpdateUserData) => Promise<void>;
+  onUpdate?: (id: string, data: UpdateUserData) => Promise<void>;
+  onCreate?: (data: any) => Promise<void>;
+  defaultRole?: "customer" | "admin";
 }
 
 const PRESET_AVATARS = [
@@ -26,13 +28,18 @@ export default function CustomerModal({
   onClose,
   onSaved,
   onUpdate,
+  onCreate,
+  defaultRole = "customer",
 }: CustomerModalProps) {
-  const [mode, setMode] = useState<"details" | "edit">(initialMode);
-  const [fullName, setFullName] = useState(user.full_name);
-  const [phone, setPhone] = useState(user.phone ?? "");
-  const [isActive, setIsActive] = useState(user.is_active);
-  const [avatarUrl, setAvatarUrl] = useState(user.avatar_url ?? "");
-  const [addresses, setAddresses] = useState<UserAddress[]>(user.addresses ?? []);
+  const [mode, setMode] = useState<"details" | "edit" | "create">(initialMode);
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState(user?.full_name ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
+  const [role, setRole] = useState<"customer" | "admin">(user?.role ?? defaultRole);
+  const [isActive, setIsActive] = useState(user?.is_active ?? true);
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url ?? "");
+  const [addresses, setAddresses] = useState<UserAddress[]>(user?.addresses ?? []);
   
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +57,7 @@ export default function CustomerModal({
   const [addrIsDefault, setAddrIsDefault] = useState(false);
 
   useEffect(() => {
-    const initialAvatar = user.avatar_url || "";
+    const initialAvatar = user?.avatar_url || "";
     if (PRESET_AVATARS.includes(initialAvatar) || !initialAvatar) {
       setAvatarSource("presets");
     } else if (initialAvatar.startsWith("data:image/")) {
@@ -61,7 +68,7 @@ export default function CustomerModal({
     } else {
       setAvatarSource("url");
     }
-  }, [user.avatar_url]);
+  }, [user?.avatar_url]);
 
   const convertGoogleDriveUrl = (url: string): string => {
     if (!url) return "";
@@ -178,21 +185,52 @@ export default function CustomerModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim()) {
-      setError("Họ tên không được để trống");
-      return;
+    if (mode === "create") {
+      if (!email.trim() || !fullName.trim()) {
+        setError("Email và họ tên không được để trống");
+        return;
+      }
+      if (!password.trim()) {
+        setError("Mật khẩu không được để trống khi tạo tài khoản");
+        return;
+      }
+    } else {
+      if (!fullName.trim()) {
+        setError("Họ tên không được để trống");
+        return;
+      }
     }
     setError("");
     setIsLoading(true);
 
     try {
-      await onUpdate(user.id, {
-        full_name: fullName.trim(),
-        phone: phone.trim() || undefined,
-        is_active: isActive,
-        avatar_url: avatarUrl || undefined,
-        addresses: addresses,
-      });
+      if (mode === "create") {
+        if (onCreate) {
+          await onCreate({
+            email: email.trim(),
+            password_hash: password.trim(),
+            full_name: fullName.trim(),
+            phone: phone.trim() || undefined,
+            is_active: isActive,
+            avatar_url: avatarUrl || undefined,
+            role: role,
+            addresses: addresses,
+          });
+        }
+      } else if (user) {
+        if (onUpdate) {
+          await onUpdate(user.id, {
+            email: email.trim() || undefined,
+            password_hash: password.trim() || undefined,
+            full_name: fullName.trim(),
+            phone: phone.trim() || undefined,
+            is_active: isActive,
+            avatar_url: avatarUrl || undefined,
+            role: role,
+            addresses: addresses,
+          });
+        }
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
@@ -207,7 +245,9 @@ export default function CustomerModal({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[#111111] bg-white shrink-0">
           <h2 className="text-[14px] font-extrabold uppercase tracking-wider text-[#111111]">
-            Hồ Sơ Khách Hàng
+            {mode === "create"
+              ? `Thêm ${role === "admin" ? "Admin" : "Khách Hàng"} Mới`
+              : `Hồ Sơ ${user?.role === "admin" ? "Admin" : "Khách Hàng"}`}
           </h2>
           <button
             type="button"
@@ -221,30 +261,32 @@ export default function CustomerModal({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b-2 border-[#111111] bg-neutral-50 shrink-0">
-          <button
-            type="button"
-            onClick={() => setMode("details")}
-            className={`flex-1 py-3 text-xs font-extrabold uppercase tracking-wider transition-colors border-r-2 border-[#111111] cursor-pointer ${
-              mode === "details" ? "bg-white text-[#111111]" : "text-[#555] hover:bg-[#f7f9fa]"
-            }`}
-          >
-            📋 Chi Tiết
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("edit")}
-            className={`flex-1 py-3 text-xs font-extrabold uppercase tracking-wider transition-colors cursor-pointer ${
-              mode === "edit" ? "bg-white text-[#111111]" : "text-[#555] hover:bg-[#f7f9fa]"
-            }`}
-          >
-            ✏️ Chỉnh Sửa
-          </button>
-        </div>
+        {initialMode !== "create" && (
+          <div className="flex border-b-2 border-[#111111] bg-neutral-50 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMode("details")}
+              className={`flex-1 py-3 text-xs font-extrabold uppercase tracking-wider transition-colors border-r-2 border-[#111111] cursor-pointer ${
+                mode === "details" ? "bg-white text-[#111111]" : "text-[#555] hover:bg-[#f7f9fa]"
+              }`}
+            >
+              📋 Chi Tiết
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("edit")}
+              className={`flex-1 py-3 text-xs font-extrabold uppercase tracking-wider transition-colors cursor-pointer ${
+                mode === "edit" ? "bg-white text-[#111111]" : "text-[#555] hover:bg-[#f7f9fa]"
+              }`}
+            >
+              ✏️ Chỉnh Sửa
+            </button>
+          </div>
+        )}
 
         {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto flex-1">
-          {mode === "details" ? (
+          {mode === "details" && user ? (
             /* ==================== DETAILS VIEW ==================== */
             <div className="space-y-6">
               {/* Profile Overview */}
@@ -427,6 +469,46 @@ export default function CustomerModal({
               </div>
 
               {/* Account Details */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                  Email <span className="text-[#D12052]">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="border-2 border-[#111111] py-2.5 px-3 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                  {mode === "create" ? "Mật khẩu" : "Mật khẩu mới (để trống nếu không đổi)"} {mode === "create" && <span className="text-[#D12052]">*</span>}
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={mode === "create" ? "••••••••" : "Nhập mật khẩu mới..."}
+                  className="border-2 border-[#111111] py-2.5 px-3 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+                  Vai trò <span className="text-[#D12052]">*</span>
+                </label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as "customer" | "admin")}
+                  className="border-2 border-[#111111] py-2.5 px-3 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa] bg-white cursor-pointer"
+                >
+                  <option value="customer">Khách Hàng (Customer)</option>
+                  <option value="admin">Quản Trị Viên (Admin)</option>
+                </select>
+              </div>
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
                   Họ và tên <span className="text-[#D12052]">*</span>

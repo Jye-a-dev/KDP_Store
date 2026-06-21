@@ -29,4 +29,11 @@ export class CreateCategoryDto {
     default: false,
   })
   show_on_navbar?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Thứ tự sắp xếp',
+    example: 0,
+    default: 0,
+  })
+  sort_order?: number;
 }

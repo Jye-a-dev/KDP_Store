@@ -94,6 +94,22 @@ export class ProductResponseDto {
   })
   camera_config: CameraConfigDto;
 
+  @ApiPropertyOptional({
+    description: 'Ngày bắt đầu khuyến mãi (ISO 8601)',
+    example: '2026-06-20T00:00:00.000Z',
+    format: 'date-time',
+    nullable: true,
+  })
+  sale_start_date: Date | null;
+
+  @ApiPropertyOptional({
+    description: 'Ngày kết thúc khuyến mãi (ISO 8601)',
+    example: '2026-06-25T00:00:00.000Z',
+    format: 'date-time',
+    nullable: true,
+  })
+  sale_end_date: Date | null;
+
   @ApiProperty({
     description: 'Thời điểm tạo sản phẩm (ISO 8601)',
     example: '2024-01-15T08:30:00.000Z',

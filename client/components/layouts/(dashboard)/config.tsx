@@ -64,6 +64,7 @@ export const ADMIN_NAV = [
   { href: "/dashboard/admin/products", label: "Sản Phẩm", icon: <IconBox /> },
   { href: "/dashboard/admin/categories", label: "Danh Mục", icon: <IconBarChart /> },
   { href: "/dashboard/admin/customers", label: "Khách Hàng", icon: <IconUsers /> },
+  { href: "/dashboard/admin/admins", label: "Tài Khoản Admin", icon: <IconUser /> },
   { href: "/dashboard/admin/page-contents", label: "Giao Diện", icon: <IconLayout /> },
   { href: "/dashboard/admin/static-pages", label: "Trang & Footer", icon: <IconFileText /> },
   { href: "/dashboard/admin/profile", label: "Hồ Sơ", icon: <IconUser /> },

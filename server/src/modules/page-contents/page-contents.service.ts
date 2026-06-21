@@ -37,6 +37,7 @@ export class PageContentsService implements OnModuleInit {
         hero_description:
           'Đập tan sự đơn điệu với những thiết kế Oversize và nội thất tương tác 3D mang tuyên ngôn cá tính mạnh mẽ.',
         hero_btn: 'Mua Ngay Cực Cháy',
+        hero_banner_url: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1920&q=80',
         newsletter_title: 'Gia Nhập Cộng Đồng Z-CLUB',
         newsletter_description:
           'Nhận ngay thông báo về các đợt Sneaker Drop, nội thất 3D giới hạn và ưu đãi dành riêng cho thành viên.',

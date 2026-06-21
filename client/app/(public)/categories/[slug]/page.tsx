@@ -24,6 +24,13 @@ function CategoryPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  // Filters State
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [customMinPrice, setCustomMinPrice] = useState("");
+  const [customMaxPrice, setCustomMaxPrice] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("default");
+
   const [productModal, setProductModal] = useState<{
     open: boolean;
     mode: "create" | "edit";
@@ -78,6 +85,7 @@ function CategoryPageContent() {
     }
   };
 
+  // Base list of descendant products in this category
   const displayProducts = useMemo(() => {
     if (!activeCategory) return [];
     
@@ -93,6 +101,106 @@ function CategoryPageContent() {
     const descendantIds = getDescendantIds(activeCategory.id);
     return products.filter((p) => p.category_id !== null && descendantIds.includes(p.category_id));
   }, [activeCategory, categories, products]);
+
+  // Filtered and sorted products list
+  const filteredProducts = useMemo(() => {
+    let list = [...displayProducts];
+
+    // Price filtering
+    if (priceFilter !== "all") {
+      list = list.filter((p) => {
+        const priceVal = Math.round(Number(p.price));
+        const getActiveDiscount = () => {
+          if (!p.discount_price) return null;
+          const val = Math.round(Number(p.discount_price));
+          if (val <= 0 || val >= priceVal) return null;
+          const now = new Date();
+          if (p.sale_start_date && new Date(p.sale_start_date) > now) return null;
+          if (p.sale_end_date && new Date(p.sale_end_date) < now) return null;
+          return val;
+        };
+        const actualPrice = getActiveDiscount() ?? priceVal;
+
+        if (priceFilter === "under-1m") {
+          return actualPrice < 1000000;
+        } else if (priceFilter === "1m-5m") {
+          return actualPrice >= 1000000 && actualPrice <= 5000000;
+        } else if (priceFilter === "over-5m") {
+          return actualPrice > 5000000;
+        } else if (priceFilter === "custom") {
+          const min = customMinPrice ? parseFloat(customMinPrice) : 0;
+          const max = customMaxPrice ? parseFloat(customMaxPrice) : Infinity;
+          return actualPrice >= min && actualPrice <= max;
+        }
+        return true;
+      });
+    }
+
+    // Status filtering
+    if (statusFilter !== "all") {
+      list = list.filter((p) => {
+        const priceVal = Math.round(Number(p.price));
+        const getActiveDiscount = () => {
+          if (!p.discount_price) return null;
+          const val = Math.round(Number(p.discount_price));
+          if (val <= 0 || val >= priceVal) return null;
+          const now = new Date();
+          if (p.sale_start_date && new Date(p.sale_start_date) > now) return null;
+          if (p.sale_end_date && new Date(p.sale_end_date) < now) return null;
+          return val;
+        };
+        const hasDiscount = getActiveDiscount() !== null;
+
+        if (statusFilter === "in-stock") {
+          return p.stock > 0;
+        } else if (statusFilter === "on-sale") {
+          return hasDiscount;
+        } else if (statusFilter === "3d") {
+          return !!p.model_3d_url;
+        }
+        return true;
+      });
+    }
+
+    // Sorting
+    if (sortBy === "price-asc") {
+      list.sort((a, b) => {
+        const getActualPrice = (p: any) => {
+          const priceVal = Math.round(Number(p.price));
+          if (!p.discount_price) return priceVal;
+          const val = Math.round(Number(p.discount_price));
+          if (val <= 0 || val >= priceVal) return priceVal;
+          const now = new Date();
+          if (p.sale_start_date && new Date(p.sale_start_date) > now) return priceVal;
+          if (p.sale_end_date && new Date(p.sale_end_date) < now) return priceVal;
+          return val;
+        };
+        return getActualPrice(a) - getActualPrice(b);
+      });
+    } else if (sortBy === "price-desc") {
+      list.sort((a, b) => {
+        const getActualPrice = (p: any) => {
+          const priceVal = Math.round(Number(p.price));
+          if (!p.discount_price) return priceVal;
+          const val = Math.round(Number(p.discount_price));
+          if (val <= 0 || val >= priceVal) return priceVal;
+          const now = new Date();
+          if (p.sale_start_date && new Date(p.sale_start_date) > now) return priceVal;
+          if (p.sale_end_date && new Date(p.sale_end_date) < now) return priceVal;
+          return val;
+        };
+        return getActualPrice(b) - getActualPrice(a);
+      });
+    } else if (sortBy === "name-asc") {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === "name-desc") {
+      list.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortBy === "newest") {
+      list.sort((a, b) => b.id - a.id);
+    }
+
+    return list;
+  }, [displayProducts, priceFilter, customMinPrice, customMaxPrice, statusFilter, sortBy]);
 
   if (!activeCategory && !isLoading && categories.length > 0) {
     return (
@@ -121,7 +229,7 @@ function CategoryPageContent() {
                 Danh Mục
               </span>
               <span className="text-[10px] text-[#aaa] font-extrabold tracking-widest">
-                ({displayProducts.length} sản phẩm)
+                ({filteredProducts.length} / {displayProducts.length} sản phẩm)
               </span>
             </div>
             <h1 className="text-3xl md:text-4xl font-black text-[#111111] uppercase tracking-wide">
@@ -173,6 +281,122 @@ function CategoryPageContent() {
           </div>
         </div>
 
+        {/* Filter Bar */}
+        <div className="bg-[#f9fafb] border-2 border-[#111111] rounded-2xl shadow-[4px_4px_0px_#111111] p-5 mb-8 flex flex-col gap-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[#111111] flex items-center gap-1.5">
+              <span>⚡ Bộ lọc nâng cao</span>
+            </h3>
+            {(priceFilter !== "all" || statusFilter !== "all" || sortBy !== "default" || searchQuery !== "") && (
+              <button
+                onClick={() => {
+                  setPriceFilter("all");
+                  setCustomMinPrice("");
+                  setCustomMaxPrice("");
+                  setStatusFilter("all");
+                  setSortBy("default");
+                  setSearchQuery("");
+                }}
+                className="px-3.5 py-1.5 bg-white border-2 border-[#111111] text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-neutral-100 transition-all cursor-pointer flex items-center gap-1"
+              >
+                ✕ Đặt lại bộ lọc
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Price Filter Column */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Khoảng giá</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "all", label: "Tất cả" },
+                  { value: "under-1m", label: "< 1M" },
+                  { value: "1m-5m", label: "1M - 5M" },
+                  { value: "over-5m", label: "> 5M" },
+                  { value: "custom", label: "Tự nhập" },
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setPriceFilter(item.value)}
+                    className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                      priceFilter === item.value
+                        ? "bg-[#F8DE22] text-[#111111] shadow-[2px_2px_0px_#111111]"
+                        : "bg-white text-[#111111] hover:bg-[#f3f4f6]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {priceFilter === "custom" && (
+                <div className="flex items-center gap-2 mt-2 animate-in fade-in duration-200">
+                  <input
+                    type="number"
+                    placeholder="Min (đ)"
+                    value={customMinPrice}
+                    onChange={(e) => setCustomMinPrice(e.target.value)}
+                    className="w-full px-2.5 py-1.5 border-2 border-[#111111] rounded-lg text-xs font-semibold focus:outline-none bg-white text-black placeholder:text-[#aaa]"
+                  />
+                  <span className="text-[11px] font-bold text-[#111111]">-</span>
+                  <input
+                    type="number"
+                    placeholder="Max (đ)"
+                    value={customMaxPrice}
+                    onChange={(e) => setCustomMaxPrice(e.target.value)}
+                    className="w-full px-2.5 py-1.5 border-2 border-[#111111] rounded-lg text-xs font-semibold focus:outline-none bg-white text-black placeholder:text-[#aaa]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Status Filter Column */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Trạng thái</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "all", label: "Tất cả" },
+                  { value: "in-stock", label: "Còn hàng" },
+                  { value: "on-sale", label: "Khuyến mãi" },
+                  { value: "3d", label: "Interactive 3D" },
+                ].map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setStatusFilter(item.value)}
+                    className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                      statusFilter === item.value
+                        ? "bg-[#03AED2] text-white shadow-[2px_2px_0px_#111111]"
+                        : "bg-white text-[#111111] hover:bg-[#f3f4f6]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sort Column */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#111111]">Sắp xếp</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-3 py-2 border-2 border-[#111111] rounded-xl text-xs font-semibold focus:outline-none bg-white text-black shadow-[3px_3px_0px_#111111]"
+              >
+                <option value="default">Mặc định</option>
+                <option value="newest">Mới nhất</option>
+                <option value="price-asc">Giá: Thấp đến Cao</option>
+                <option value="price-desc">Giá: Cao đến Thấp</option>
+                <option value="name-asc">Tên: A-Z</option>
+                <option value="name-desc">Tên: Z-A</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Product Grid */}
         {isLoading ? (
           <div className="flex min-h-100 w-full items-center justify-center">
@@ -184,9 +408,15 @@ function CategoryPageContent() {
             <h3 className="text-lg font-bold text-[#111111] uppercase tracking-wide">Không tìm thấy sản phẩm nào</h3>
             <p className="text-xs text-[#555555] mt-1">Danh mục này hiện tại chưa có sản phẩm hoặc sản phẩm không khớp với từ khóa tìm kiếm.</p>
           </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="flex min-h-75 w-full flex-col items-center justify-center text-center px-6 border-2 border-dashed border-gray-200 rounded-3xl py-12 bg-gray-50/50">
+            <div className="text-5xl mb-4">🔍</div>
+            <h3 className="text-lg font-bold text-[#111111] uppercase tracking-wide">Không tìm thấy sản phẩm nào</h3>
+            <p className="text-xs text-[#555555] mt-1">Không có sản phẩm nào khớp với bộ lọc hiện tại.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
-            {displayProducts.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}

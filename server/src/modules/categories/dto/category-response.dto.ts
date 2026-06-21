@@ -33,6 +33,12 @@ export class CategoryResponseDto {
   show_on_navbar!: boolean;
 
   @ApiProperty({
+    description: 'Thứ tự sắp xếp của danh mục',
+    example: 0,
+  })
+  sort_order!: number;
+
+  @ApiProperty({
     description: 'Thời điểm tạo danh mục (ISO 8601)',
     example: '2024-01-15T08:30:00.000Z',
     format: 'date-time',

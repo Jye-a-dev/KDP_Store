@@ -33,7 +33,7 @@ export function useCategories() {
   }, []);
 
   const createCategory = useCallback(
-    async (name: string, parentId?: number | null, showOnNavbar?: boolean, slug?: string) => {
+    async (name: string, parentId?: number | null, showOnNavbar?: boolean, slug?: string, sortOrder?: number) => {
       if (!token) throw new Error("Unauthorized");
       setIsLoading(true);
       setError(null);
@@ -42,7 +42,8 @@ export function useCategories() {
           name, 
           parent_id: parentId ?? null, 
           show_on_navbar: !!showOnNavbar, 
-          slug: slug?.trim() || undefined 
+          slug: slug?.trim() || undefined,
+          sort_order: sortOrder ?? 0
         };
         const res = await fetchWithTimeout(`${API_URL}/categories`, {
           method: "POST",
@@ -67,7 +68,7 @@ export function useCategories() {
   );
 
   const updateCategory = useCallback(
-    async (id: number, name: string, parentId?: number | null, showOnNavbar?: boolean, slug?: string) => {
+    async (id: number, name: string, parentId?: number | null, showOnNavbar?: boolean, slug?: string, sortOrder?: number) => {
       if (!token) throw new Error("Unauthorized");
       setIsLoading(true);
       setError(null);
@@ -76,7 +77,8 @@ export function useCategories() {
           name, 
           parent_id: parentId ?? null, 
           show_on_navbar: !!showOnNavbar, 
-          slug: slug?.trim() || undefined 
+          slug: slug?.trim() || undefined,
+          sort_order: sortOrder !== undefined ? sortOrder : undefined
         };
         const res = await fetchWithTimeout(`${API_URL}/categories/${id}`, {
           method: "PATCH",

@@ -4,12 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { User } from "@/types/api";
 import { useUsers } from "@/hooks/useUsers";
 import AdminDeleteModal from "@/components/pages/admin/AdminDeleteModal";
-import CustomersHeader from "./CustomersHeader";
-import CustomerStatsCards from "./CustomerStatsCards";
-import CustomersTable from "./CustomersTable";
-import CustomerModal from "./CustomerModal";
+import AdminsHeader from "./AdminsHeader";
+import AdminStatsCards from "./AdminStatsCards";
+import AdminsTable from "./AdminsTable";
+import CustomerModal from "../AdminCustomers/CustomerModal";
 
-export default function AdminCustomers() {
+export default function AdminAdmins() {
   const {
     users,
     userStats,
@@ -50,7 +50,7 @@ export default function AdminCustomers() {
     fetchUsers({
       page,
       limit: 10,
-      role: "customer",
+      role: "admin",
       search: debouncedSearch,
       is_active: activeFilter === "" ? undefined : activeFilter === "true",
     });
@@ -74,9 +74,9 @@ export default function AdminCustomers() {
 
   return (
     <div className="max-w-6xl mx-auto pb-24 md:pb-8">
-      <CustomersHeader stats={userStats} onAddClick={() => setActiveUser({ mode: "create" })} />
-      <CustomerStatsCards stats={userStats} />
-      <CustomersTable
+      <AdminsHeader stats={userStats} onAddClick={() => setActiveUser({ mode: "create" })} />
+      <AdminStatsCards stats={userStats} />
+      <AdminsTable
         users={users}
         isLoading={isLoading}
         search={search}
@@ -99,7 +99,7 @@ export default function AdminCustomers() {
           onClose={() => setActiveUser(null)}
           onUpdate={updateUser}
           onCreate={createUser}
-          defaultRole="customer"
+          defaultRole="admin"
           onSaved={() => {
             setActiveUser(null);
             loadUsers();
@@ -111,7 +111,7 @@ export default function AdminCustomers() {
       {deleteConfirm.open && (
         <AdminDeleteModal
           itemName={deleteConfirm.name}
-          description="Tài khoản và dữ liệu liên quan sẽ bị xóa vĩnh viễn."
+          description="Tài khoản admin này sẽ bị xóa vĩnh viễn khỏi hệ thống."
           onCancel={() => setDeleteConfirm({ open: false })}
           onConfirm={handleDelete}
         />

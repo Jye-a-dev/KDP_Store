@@ -132,4 +132,18 @@ export class UpdateProductDto {
     example: '2026-06-20T00:00:00.000Z',
   })
   import_date?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Ngày bắt đầu khuyến mãi',
+    example: '2026-06-20T00:00:00.000Z',
+    nullable: true,
+  })
+  sale_start_date?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Ngày kết thúc khuyến mãi',
+    example: '2026-06-25T00:00:00.000Z',
+    nullable: true,
+  })
+  sale_end_date?: Date;
 }

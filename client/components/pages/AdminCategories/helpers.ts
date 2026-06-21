@@ -9,9 +9,13 @@ export function buildTree(flat: Category[]): CategoryNode[] {
       roots.push(node);
     } else {
       const parent = map.get(node.parent_id);
-      if (parent) parent.children.push(node);
+      if (parent) {
+        parent.children.push(node);
+        parent.children.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      }
     }
   });
+  roots.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   return roots;
 }
 

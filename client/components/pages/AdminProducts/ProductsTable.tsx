@@ -91,9 +91,23 @@ export default function ProductsTable({
 
   // Group products by category
   const getGroupedData = () => {
-    // If selectedCategory is set, only show that category group
+    const getDescendantCategoryIds = (catId: number): number[] => {
+      const ids: number[] = [catId];
+      const checkChildren = (parentId: number) => {
+        categories.forEach(c => {
+          if (c.parent_id === parentId) {
+            ids.push(c.id);
+            checkChildren(c.id);
+          }
+        });
+      };
+      checkChildren(catId);
+      return ids;
+    };
+
+    // If selectedCategory is set, show that category and all its descendants
     const targetCats = selectedCategory
-      ? categories.filter(c => String(c.id) === selectedCategory)
+      ? categories.filter(c => getDescendantCategoryIds(Number(selectedCategory)).includes(c.id))
       : categories;
 
     const groups = targetCats.map((cat) => {

@@ -31,6 +31,19 @@ export default function ProductDetails({
   handleBuyNow,
   successMsg,
 }: ProductDetailsProps) {
+  const priceVal = Math.round(Number(product.price));
+  const getActiveDiscount = () => {
+    if (!product.discount_price) return null;
+    const val = Math.round(Number(product.discount_price));
+    if (val <= 0 || val >= priceVal) return null;
+    const now = new Date();
+    if (product.sale_start_date && new Date(product.sale_start_date) > now) return null;
+    if (product.sale_end_date && new Date(product.sale_end_date) < now) return null;
+    return val;
+  };
+  const discountVal = getActiveDiscount();
+  const hasRealDiscount = discountVal !== null;
+
   return (
     <div className="flex flex-col justify-between h-full">
       <div className="flex flex-col gap-5">
@@ -43,13 +56,6 @@ export default function ProductDetails({
             const rawBadge = product.badge.trim();
             let text = rawBadge;
             let color = "bg-[#03AED2] text-white";
-
-            const priceVal = Math.round(Number(product.price));
-            const discountVal = product.discount_price
-              ? Math.round(Number(product.discount_price))
-              : null;
-            const hasRealDiscount =
-              discountVal !== null && discountVal > 0 && discountVal < priceVal;
 
             if (rawBadge === "Sale Off") {
               if (hasRealDiscount) {
@@ -99,13 +105,6 @@ export default function ProductDetails({
 
           {/* Price */}
           {(() => {
-            const priceVal = Math.round(Number(product.price));
-            const discountVal = product.discount_price
-              ? Math.round(Number(product.discount_price))
-              : null;
-            const hasRealDiscount =
-              discountVal !== null && discountVal > 0 && discountVal < priceVal;
-
             if (hasRealDiscount) {
               return (
                 <div className="flex items-center gap-3 mt-3">
@@ -114,17 +113,6 @@ export default function ProductDetails({
                   </span>
                   <span className="text-sm text-[#aaa] line-through">
                     {priceVal.toLocaleString("vi-VN")}đ
-                  </span>
-                </div>
-              );
-            } else if (product.id % 3 === 0) {
-              return (
-                <div className="flex items-center gap-3 mt-3">
-                  <span className="text-3xl font-black text-[#D12052]">
-                    {priceVal.toLocaleString("vi-VN")}đ
-                  </span>
-                  <span className="text-sm text-[#aaa] line-through">
-                    {Math.round(priceVal * 1.25).toLocaleString("vi-VN")}đ
                   </span>
                 </div>
               );

@@ -28,4 +28,10 @@ export class UpdateCategoryDto {
     example: true,
   })
   show_on_navbar?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Thứ tự sắp xếp',
+    example: 1,
+  })
+  sort_order?: number;
 }

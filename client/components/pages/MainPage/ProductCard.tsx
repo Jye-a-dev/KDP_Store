@@ -22,6 +22,8 @@ interface Product {
   model_3d_url: string | null;
   is_published: boolean;
   badge?: string | null;
+  sale_start_date?: string | null;
+  sale_end_date?: string | null;
 }
 
 interface ProductCardProps {
@@ -90,12 +92,21 @@ export default function ProductCard({
   const imageUrl = getProductImage(product.images_2d);
   const isFurniture = !!product.model_3d_url;
   const priceVal = Math.round(Number(product.price));
-  const discountVal = product.discount_price ? Math.round(Number(product.discount_price)) : null;
-  const hasRealDiscount = discountVal !== null && discountVal > 0 && discountVal < priceVal;
+  const getActiveDiscount = () => {
+    if (!product.discount_price) return null;
+    const val = Math.round(Number(product.discount_price));
+    if (val <= 0 || val >= priceVal) return null;
+    const now = new Date();
+    if (product.sale_start_date && new Date(product.sale_start_date) > now) return null;
+    if (product.sale_end_date && new Date(product.sale_end_date) < now) return null;
+    return val;
+  };
+  const discountVal = getActiveDiscount();
+  const hasRealDiscount = discountVal !== null;
 
   const displayPrice = hasRealDiscount ? discountVal : priceVal;
   const oldPrice = hasRealDiscount ? priceVal : Math.round(priceVal * 1.25);
-  const hasDiscount = hasRealDiscount || (product.id % 3 === 0);
+  const hasDiscount = hasRealDiscount;
 
   let badgeColor = "";
   let badgeText = "";

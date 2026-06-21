@@ -6,6 +6,13 @@ interface CategoryTreeRowProps {
   depth: number;
   onEdit: (c: Category) => void;
   onDelete: (id: number, name: string) => void;
+  draggedId: number | null;
+  dragOverTarget: { id: number; position: "before" | "after" | "inside" } | null;
+  onDragStart: (e: React.DragEvent, id: number) => void;
+  onDragEnd: () => void;
+  onDragOver: (e: React.DragEvent, id: number) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent, id: number) => void;
 }
 
 export default function CategoryTreeRow({
@@ -13,15 +20,50 @@ export default function CategoryTreeRow({
   depth,
   onEdit,
   onDelete,
+  draggedId,
+  dragOverTarget,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: CategoryTreeRowProps) {
   const [open, setOpen] = useState(true);
   const hasChildren = node.children.length > 0;
 
+  const isTarget = dragOverTarget?.id === node.id;
+  const targetPos = isTarget ? dragOverTarget?.position : null;
+  const dragClasses = isTarget
+    ? targetPos === "before"
+      ? "border-t-4 border-[#F8DE22] bg-[#f7f9fa] shadow-inner"
+      : targetPos === "after"
+      ? "border-b-4 border-[#F8DE22] bg-[#f7f9fa] shadow-inner"
+      : "bg-[#F8DE22]/20 border-l-4 border-l-[#F8DE22]"
+    : "";
+
+  const isSelfDragging = draggedId === node.id;
+
   return (
     <>
-      <tr className="border-b border-[#111111]/5 hover:bg-[#f7f9fa] transition-colors group">
+      <tr
+        onDragOver={(e) => onDragOver(e, node.id)}
+        onDragLeave={onDragLeave}
+        onDrop={(e) => onDrop(e, node.id)}
+        className={`border-b border-[#111111]/5 hover:bg-[#f7f9fa] transition-all group ${dragClasses} ${
+          isSelfDragging ? "opacity-40 bg-[#f1f3f5]" : ""
+        }`}
+      >
         <td className="px-4 py-3">
           <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 20}px` }}>
+            <span
+              draggable
+              onDragStart={(e) => onDragStart(e, node.id)}
+              onDragEnd={onDragEnd}
+              className="cursor-grab active:cursor-grabbing text-[#aaa] hover:text-[#111] mr-1 font-bold text-sm select-none"
+              title="Kéo thả để sắp xếp vị trí hoặc phân cấp"
+            >
+              ☰
+            </span>
             {hasChildren ? (
               <button
                 type="button"
@@ -91,6 +133,13 @@ export default function CategoryTreeRow({
             depth={depth + 1}
             onEdit={onEdit}
             onDelete={onDelete}
+            draggedId={draggedId}
+            dragOverTarget={dragOverTarget}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
           />
         ))}
     </>
