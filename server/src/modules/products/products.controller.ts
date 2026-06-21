@@ -23,7 +23,6 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as path from 'path';
-import * as fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -86,45 +85,34 @@ export class ProductsController {
       process.env.SUPABASE_URL || 'https://jvjzdxblwznjlhoxsjux.supabase.co';
     const supabaseKey = process.env.SUPABASE_KEY;
 
+    if (!supabaseKey || supabaseKey.startsWith('YOUR_')) {
+      throw new Error(
+        'Supabase Key chưa được cấu hình. Vui lòng cấu hình SUPABASE_KEY trong file .env',
+      );
+    }
+
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const filename = `model-${uniqueSuffix}${ext}`;
 
-    // Nếu đã cấu hình Supabase Key hợp lệ thì tải lên Supabase
-    if (supabaseKey && !supabaseKey.startsWith('YOUR_')) {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const { error } = await supabase.storage
-        .from('3d model')
-        .upload(filename, uploadedFile.buffer, {
-          contentType: uploadedFile.mimetype || 'application/octet-stream',
-          upsert: true,
-        });
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { error } = await supabase.storage
+      .from('3d model')
+      .upload(filename, uploadedFile.buffer, {
+        contentType: uploadedFile.mimetype || 'application/octet-stream',
+        upsert: true,
+      });
 
-      if (error) {
-        throw new Error(`Upload lên Supabase thất bại: ${error.message}`);
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('3d model').getPublicUrl(filename);
-
-      return {
-        message: 'Upload file 3D lên Supabase thành công!',
-        url: publicUrl,
-      };
+    if (error) {
+      throw new Error(`Upload lên Supabase thất bại: ${error.message}`);
     }
 
-    // Fallback: Lưu cục bộ nếu chưa cấu hình Supabase
-    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', '3d');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, filename);
-    fs.writeFileSync(filePath, uploadedFile.buffer);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('3d model').getPublicUrl(filename);
 
     return {
-      message: 'Upload file 3D cục bộ thành công!',
-      url: `/uploads/3d/${filename}`,
+      message: 'Upload file 3D lên Supabase thành công!',
+      url: publicUrl,
     };
   }
 
