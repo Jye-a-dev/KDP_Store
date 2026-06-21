@@ -28,6 +28,12 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
 
+  const [minAmount, setMinAmount] = useState<number | "">("");
+  const [maxAmount, setMaxAmount] = useState<number | "">("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [productName, setProductName] = useState("");
+
   // Modal visibility states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -40,12 +46,24 @@ export default function AdminOrders() {
       page,
       limit: 10,
       order_status: statusFilter || undefined,
+      min_amount: minAmount !== "" ? Number(minAmount) : undefined,
+      max_amount: maxAmount !== "" ? Number(maxAmount) : undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+      product_name: productName || undefined,
     });
-  }, [fetchOrdersList, page, statusFilter]);
+  }, [fetchOrdersList, page, statusFilter, minAmount, maxAmount, startDate, endDate, productName]);
 
   useEffect(() => {
-    fetchOrderStats();
-  }, [fetchOrderStats]);
+    fetchOrderStats({
+      order_status: statusFilter || undefined,
+      min_amount: minAmount !== "" ? Number(minAmount) : undefined,
+      max_amount: maxAmount !== "" ? Number(maxAmount) : undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+      product_name: productName || undefined,
+    });
+  }, [fetchOrderStats, statusFilter, minAmount, maxAmount, startDate, endDate, productName]);
 
   useEffect(() => {
     loadOrders();
@@ -53,6 +71,41 @@ export default function AdminOrders() {
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
+    setPage(1);
+  };
+
+  const handleMinAmountChange = (val: number | "") => {
+    setMinAmount(val);
+    setPage(1);
+  };
+
+  const handleMaxAmountChange = (val: number | "") => {
+    setMaxAmount(val);
+    setPage(1);
+  };
+
+  const handleStartDateChange = (val: string) => {
+    setStartDate(val);
+    setPage(1);
+  };
+
+  const handleEndDateChange = (val: string) => {
+    setEndDate(val);
+    setPage(1);
+  };
+
+  const handleProductNameChange = (val: string) => {
+    setProductName(val);
+    setPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setMinAmount("");
+    setMaxAmount("");
+    setStartDate("");
+    setEndDate("");
+    setProductName("");
+    setStatusFilter("");
     setPage(1);
   };
 
@@ -88,10 +141,21 @@ export default function AdminOrders() {
         orders={orders}
         isLoading={isLoading}
         statusFilter={statusFilter}
+        minAmount={minAmount}
+        maxAmount={maxAmount}
+        startDate={startDate}
+        endDate={endDate}
+        productName={productName}
         page={pagination.page}
         totalPages={pagination.total_pages}
         total={pagination.total}
         onStatusFilterChange={handleStatusFilterChange}
+        onMinAmountChange={handleMinAmountChange}
+        onMaxAmountChange={handleMaxAmountChange}
+        onStartDateChange={handleStartDateChange}
+        onEndDateChange={handleEndDateChange}
+        onProductNameChange={handleProductNameChange}
+        onResetFilters={handleResetFilters}
         onStatusUpdate={handleStatusUpdate}
         onPageChange={setPage}
         onEditClick={handleOpenEdit}

@@ -46,6 +46,12 @@ export default function CartDrawer() {
   // Reset states when drawer closes/opens
   useEffect(() => {
     if (!isCartOpen) {
+      if (showMomoQr && createdOrder?.id) {
+        fetch(`${API_URL}/orders/${createdOrder.id}`, {
+          method: "DELETE",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }).catch((err) => console.error("Lỗi khi xóa đơn hàng khi đóng:", err));
+      }
       setStep("cart");
       setCheckoutError(null);
       setSuccessMsg(null);
@@ -53,7 +59,7 @@ export default function CartDrawer() {
       setShowMomoQr(false);
       setIsPolling(false);
     }
-  }, [isCartOpen]);
+  }, [isCartOpen, showMomoQr, createdOrder, token, API_URL]);
 
   // Poll order status if MoMo payment is pending
   useEffect(() => {
@@ -229,9 +235,20 @@ export default function CartDrawer() {
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
+                if (createdOrder?.id) {
+                  try {
+                    await fetch(`${API_URL}/orders/${createdOrder.id}`, {
+                      method: "DELETE",
+                      headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    });
+                  } catch (err) {
+                    console.error("Lỗi khi xóa đơn hàng MoMo hủy:", err);
+                  }
+                }
                 setShowMomoQr(false);
                 setIsPolling(false);
+                setCreatedOrder(null);
                 setStep("checkout");
               }}
               className="mt-6 px-6 py-2.5 border-2 border-[#111111] text-[#111111] hover:bg-neutral-50 text-[10px] font-bold uppercase tracking-wider rounded-xl cursor-pointer"
@@ -284,12 +301,29 @@ export default function CartDrawer() {
                       </div>
 
                       <div className="flex justify-between items-center mt-2">
-                        {/* Quantity display */}
-                        <div className="inline-flex items-center bg-[#f7f9fa] px-3.5 py-1 rounded-lg border border-[#111111]/20 text-[11px] font-extrabold text-[#555]">
-                          Số lượng: 1
+                        {/* Quantity controls */}
+                        <div className="flex items-center bg-white border border-[#111111]/20 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.color, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            className="px-2 py-1 text-xs font-bold text-[#111111] hover:bg-neutral-100 transition-colors disabled:opacity-30 cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="px-3 text-[11px] font-extrabold text-[#555] select-none">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.color, item.quantity + 1)}
+                            className="px-2 py-1 text-xs font-bold text-[#111111] hover:bg-neutral-100 transition-colors cursor-pointer"
+                          >
+                            +
+                          </button>
                         </div>
                         <p className="font-extrabold text-[#D12052] text-xs">
-                          {item.price.toLocaleString("vi-VN")}đ
+                          {(item.price * item.quantity).toLocaleString("vi-VN")}đ
                         </p>
                       </div>
                     </div>

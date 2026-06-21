@@ -51,6 +51,12 @@ export class OrdersService {
     try {
       await client.query('BEGIN');
 
+      const paymentInfo = dto.payment_info ?? {
+        method: 'COD',
+        status: 'pending',
+      };
+      const isImmediatelyPaid = paymentInfo.status === 'paid';
+
       const itemsSnapshot: OrderItem[] = [];
       let totalAmount = 0;
 
@@ -95,11 +101,13 @@ export class OrdersService {
 
         totalAmount += activePrice * orderQuantity;
 
-        // Trừ kho
-        await client.query(
-          'UPDATE products SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
-          [orderQuantity, item.product_id],
-        );
+        // Trừ kho nếu đã thanh toán thành công ngay lập tức
+        if (isImmediatelyPaid) {
+          await client.query(
+            'UPDATE products SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
+            [orderQuantity, item.product_id],
+          );
+        }
 
         // Thêm vào snapshot
         itemsSnapshot.push({
@@ -113,11 +121,6 @@ export class OrdersService {
 
       const shippingFee = Number(dto.shipping_fee ?? 0);
       const finalAmount = totalAmount + shippingFee;
-
-      const paymentInfo = dto.payment_info ?? {
-        method: 'COD',
-        status: 'pending',
-      };
 
       // 3. Tạo đơn hàng
       const orderRes = await client.query<Order>(
@@ -200,6 +203,26 @@ export class OrdersService {
       idx++;
     }
 
+    if (query.start_date) {
+      conditions.push(`created_at >= $${idx}::timestamp`);
+      params.push(`${query.start_date} 00:00:00`);
+      idx++;
+    }
+
+    if (query.end_date) {
+      conditions.push(`created_at <= $${idx}::timestamp`);
+      params.push(`${query.end_date} 23:59:59`);
+      idx++;
+    }
+
+    if (query.product_name) {
+      conditions.push(
+        `EXISTS (SELECT 1 FROM jsonb_to_recordset(orders.items) as x(name text) WHERE LOWER(x.name) LIKE $${idx})`,
+      );
+      params.push(`%${query.product_name.toLowerCase()}%`);
+      idx++;
+    }
+
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const countResult = await this.db.query<CountResult>(
@@ -249,12 +272,34 @@ export class OrdersService {
     const params: unknown[] = [];
     let idx = 1;
 
+    const oldStatus = current.payment_info?.status;
+    const newStatus = dto.payment_info?.status;
+
+    if (newStatus === 'paid' && oldStatus !== 'paid') {
+      const client = await this.db.connect();
+      try {
+        await client.query('BEGIN');
+        for (const item of current.items) {
+          await client.query(
+            'UPDATE products SET stock = stock - $1, updated_at = NOW() WHERE id = $2',
+            [item.quantity, item.product_id],
+          );
+        }
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
+
     if (dto.order_status !== undefined) {
-      // Nếu hủy đơn hàng đang ở trạng thái pending/processing, cần hoàn lại kho?
-      // Để đơn giản và đúng nghiệp vụ, ta có thể tự động trả lại kho khi đơn chuyển sang 'cancelled'
+      // Hoàn lại kho khi đơn chuyển sang 'cancelled' và trước đó đã được thanh toán
       if (
         dto.order_status === 'cancelled' &&
-        current.order_status !== 'cancelled'
+        current.order_status !== 'cancelled' &&
+        oldStatus === 'paid'
       ) {
         const client = await this.db.connect();
         try {
@@ -374,6 +419,26 @@ export class OrdersService {
     if (query.payment_status) {
       conditions.push(`payment_info->>'status' = $${idx}`);
       params.push(query.payment_status);
+      idx++;
+    }
+
+    if (query.start_date) {
+      conditions.push(`created_at >= $${idx}::timestamp`);
+      params.push(`${query.start_date} 00:00:00`);
+      idx++;
+    }
+
+    if (query.end_date) {
+      conditions.push(`created_at <= $${idx}::timestamp`);
+      params.push(`${query.end_date} 23:59:59`);
+      idx++;
+    }
+
+    if (query.product_name) {
+      conditions.push(
+        `EXISTS (SELECT 1 FROM jsonb_to_recordset(orders.items) as x(name text) WHERE LOWER(x.name) LIKE $${idx})`,
+      );
+      params.push(`%${query.product_name.toLowerCase()}%`);
       idx++;
     }
 

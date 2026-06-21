@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Product } from "@/types/api";
+import BabylonViewer from "./BabylonViewer";
 
 interface ProductDetailModalProps {
   product: Product;
@@ -28,16 +29,7 @@ export default function ProductDetailModal({
 
   const isFurniture = !!product.model_3d_url;
 
-  // Load Google's <model-viewer> web component dynamically
-  useEffect(() => {
-    if (isFurniture && !document.getElementById("model-viewer-script")) {
-      const script = document.createElement("script");
-      script.id = "model-viewer-script";
-      script.type = "module";
-      script.src = "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js";
-      document.body.appendChild(script);
-    }
-  }, [isFurniture]);
+  // BabylonJS component handles loading automatically
 
   // Set default view to 3D if furniture
   useEffect(() => {
@@ -141,18 +133,7 @@ export default function ProductDetailModal({
               </div>
             ) : (
               <div className="w-full h-full min-h-75 flex items-center justify-center">
-                {/* @ts-ignore */}
-                <model-viewer
-                  src={modelUrl}
-                  camera-controls
-                  auto-rotate
-                  ar
-                  shadow-intensity="1"
-                  style={{ width: "100%", height: "350px", outline: "none" }}
-                  className="bg-transparent"
-                >
-                  {/* @ts-ignore */}
-                </model-viewer>
+                <BabylonViewer url={modelUrl} />
               </div>
             )}
           </div>

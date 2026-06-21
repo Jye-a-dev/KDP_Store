@@ -1,5 +1,7 @@
 "use client";
 
+import BabylonViewer from "@/components/pages/MainPage/BabylonViewer";
+
 interface ProductMediaViewerProps {
   activeTab: "2d" | "3d";
   setActiveTab: (tab: "2d" | "3d") => void;
@@ -151,18 +153,7 @@ export default function ProductMediaViewer({
           </div>
         ) : (
           <div className="w-full h-full min-h-87.5 flex items-center justify-center">
-            {/* @ts-ignore */}
-            <model-viewer
-              src={modelUrl}
-              camera-controls
-              auto-rotate
-              ar
-              shadow-intensity="1"
-              style={{ width: "100%", height: "400px", outline: "none" }}
-              className="bg-transparent"
-            >
-              {/* @ts-ignore */}
-            </model-viewer>
+            <BabylonViewer url={modelUrl} />
           </div>
         )}
       </div>

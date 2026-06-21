@@ -6,10 +6,21 @@ interface OrdersTableProps {
   orders: Order[];
   isLoading: boolean;
   statusFilter: string;
+  minAmount: number | "";
+  maxAmount: number | "";
+  startDate: string;
+  endDate: string;
+  productName: string;
   page: number;
   totalPages: number;
   total: number;
   onStatusFilterChange: (status: string) => void;
+  onMinAmountChange: (val: number | "") => void;
+  onMaxAmountChange: (val: number | "") => void;
+  onStartDateChange: (val: string) => void;
+  onEndDateChange: (val: string) => void;
+  onProductNameChange: (val: string) => void;
+  onResetFilters: () => void;
   onStatusUpdate: (orderId: string, status: string) => void;
   onPageChange: (page: number) => void;
   onEditClick: (order: Order) => void;
@@ -20,10 +31,21 @@ export default function OrdersTable({
   orders,
   isLoading,
   statusFilter,
+  minAmount,
+  maxAmount,
+  startDate,
+  endDate,
+  productName,
   page,
   totalPages,
   total,
   onStatusFilterChange,
+  onMinAmountChange,
+  onMaxAmountChange,
+  onStartDateChange,
+  onEndDateChange,
+  onProductNameChange,
+  onResetFilters,
   onStatusUpdate,
   onPageChange,
   onEditClick,
@@ -47,6 +69,82 @@ export default function OrdersTable({
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Advanced Filters Panel */}
+      <div className="px-5 py-4 bg-neutral-50/80 border-b-2 border-[#111111] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3.5 items-end">
+        {/* Price Range Filters */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-black uppercase tracking-wider text-[#111111]">
+            Khoảng Tiền (VNĐ)
+          </label>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number"
+              placeholder="Từ"
+              value={minAmount}
+              onChange={(e) => onMinAmountChange(e.target.value ? Number(e.target.value) : "")}
+              className="w-full border-2 border-[#111111] py-1.5 px-2.5 rounded-lg text-xs font-semibold outline-none bg-white focus:bg-[#f7f9fa]"
+            />
+            <span className="text-xs font-bold text-gray-400">—</span>
+            <input
+              type="number"
+              placeholder="Đến"
+              value={maxAmount}
+              onChange={(e) => onMaxAmountChange(e.target.value ? Number(e.target.value) : "")}
+              className="w-full border-2 border-[#111111] py-1.5 px-2.5 rounded-lg text-xs font-semibold outline-none bg-white focus:bg-[#f7f9fa]"
+            />
+          </div>
+        </div>
+
+        {/* Start Date */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-black uppercase tracking-wider text-[#111111]">
+            Từ Ngày
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => onStartDateChange(e.target.value)}
+            className="w-full border-2 border-[#111111] py-1.5 px-2.5 rounded-lg text-xs font-semibold outline-none bg-white focus:bg-[#f7f9fa] cursor-pointer"
+          />
+        </div>
+
+        {/* End Date */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-black uppercase tracking-wider text-[#111111]">
+            Đến Ngày
+          </label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => onEndDateChange(e.target.value)}
+            className="w-full border-2 border-[#111111] py-1.5 px-2.5 rounded-lg text-xs font-semibold outline-none bg-white focus:bg-[#f7f9fa] cursor-pointer"
+          />
+        </div>
+
+        {/* Product Search Input */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-black uppercase tracking-wider text-[#111111]">
+            Tìm Sản Phẩm
+          </label>
+          <input
+            type="text"
+            placeholder="Tên sản phẩm..."
+            value={productName}
+            onChange={(e) => onProductNameChange(e.target.value)}
+            className="w-full border-2 border-[#111111] py-1.5 px-2.5 rounded-lg text-xs font-semibold outline-none bg-white focus:bg-[#f7f9fa]"
+          />
+        </div>
+
+        {/* Reset Button */}
+        <button
+          type="button"
+          onClick={onResetFilters}
+          className="w-full border-2 border-[#111111] py-1.5 px-4 rounded-lg text-xs font-black uppercase tracking-wider bg-white hover:bg-neutral-100 transition-colors shadow-[2px_2px_0px_#111111] hover:shadow-[1px_1px_0px_#111111] hover:translate-x-px hover:translate-y-px active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer"
+        >
+          Xóa Bộ Lọc
+        </button>
       </div>
 
       {isLoading ? (

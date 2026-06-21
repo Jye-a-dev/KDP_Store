@@ -114,16 +114,7 @@ export default function ProductDetailPage() {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Load Google's <model-viewer> web component dynamically
-  useEffect(() => {
-    if (product?.model_3d_url && !document.getElementById("model-viewer-script")) {
-      const script = document.createElement("script");
-      script.id = "model-viewer-script";
-      script.type = "module";
-      script.src = "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js";
-      document.body.appendChild(script);
-    }
-  }, [product?.model_3d_url]);
+  // BabylonJS handles 3D rendering internally without external script injection
 
   const getCategoryName = (catId: number) => {
     const cat = categories.find((c) => c.id === catId);

@@ -60,6 +60,25 @@ export class QueryOrderDto {
   payment_status?: string;
 
   @ApiPropertyOptional({
+    description: 'Từ ngày (YYYY-MM-DD)',
+    example: '2026-06-01',
+  })
+  start_date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Đến ngày (YYYY-MM-DD)',
+    example: '2026-06-30',
+  })
+  end_date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Lọc theo tên sản phẩm',
+    example: 'Ao thun',
+    type: String,
+  })
+  product_name?: string;
+
+  @ApiPropertyOptional({
     description: 'Trường dùng để sắp xếp kết quả',
     example: 'created_at',
     enum: ['created_at', 'total_amount'],
@@ -74,4 +93,5 @@ export class QueryOrderDto {
     default: 'DESC',
   })
   sort_order?: 'ASC' | 'DESC';
+  product_id: any;
 }

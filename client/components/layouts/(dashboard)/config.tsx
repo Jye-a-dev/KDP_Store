@@ -66,6 +66,7 @@ export const ADMIN_NAV = [
   { href: "/dashboard/admin/customers", label: "Khách Hàng", icon: <IconUsers /> },
   { href: "/dashboard/admin/page-contents", label: "Giao Diện", icon: <IconLayout /> },
   { href: "/dashboard/admin/static-pages", label: "Trang & Footer", icon: <IconFileText /> },
+  { href: "/dashboard/admin/profile", label: "Hồ Sơ", icon: <IconUser /> },
 ];
 
 export const CUSTOMER_NAV = [

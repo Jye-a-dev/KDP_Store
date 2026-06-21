@@ -169,7 +169,27 @@ export function PageContentProvider({ children }: { children: React.ReactNode })
         isLoading,
       }}
     >
-      {children}
+      {isLoading ? (
+        <div className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-white transition-opacity duration-300">
+          <div className="relative flex items-center justify-center w-24 h-24">
+            {/* Outer spinning gradient ring using brand colors */}
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#D12052] border-r-[#F45B26] border-l-[#03AED2] animate-spin"></div>
+            {/* Middle pulsing ring */}
+            <div className="absolute inset-2 rounded-full border border-neutral-100 animate-pulse"></div>
+            {/* Inner branding dots and pulses */}
+            <div className="absolute w-8 h-8 rounded-full bg-[#D12052] animate-ping opacity-75"></div>
+            <div className="absolute w-6 h-6 rounded-full bg-[#F45B26] shadow-lg"></div>
+          </div>
+          <p className="mt-8 text-xs font-extrabold tracking-[3px] text-[#111111] uppercase animate-pulse select-none">
+            Đang kết nối tới máy chủ...
+          </p>
+          <span className="mt-2 text-[10px] text-neutral-400 font-medium">
+            Vui lòng chờ trong giây lát
+          </span>
+        </div>
+      ) : (
+        children
+      )}
     </PageContentContext.Provider>
   );
 }

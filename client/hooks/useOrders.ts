@@ -11,6 +11,11 @@ export interface OrderQueryParams {
   order_status?: string;
   sort_by?: "created_at" | "total_amount";
   sort_order?: "ASC" | "DESC";
+  min_amount?: number;
+  max_amount?: number;
+  start_date?: string;
+  end_date?: string;
+  product_name?: string;
 }
 
 export function useOrders() {
@@ -98,6 +103,11 @@ export function useOrders() {
         query.set("sort_by", params.sort_by ?? "created_at");
         query.set("sort_order", params.sort_order ?? "DESC");
         if (params.order_status) query.set("order_status", params.order_status);
+        if (params.min_amount !== undefined) query.set("min_amount", String(params.min_amount));
+        if (params.max_amount !== undefined) query.set("max_amount", String(params.max_amount));
+        if (params.start_date) query.set("start_date", params.start_date);
+        if (params.end_date) query.set("end_date", params.end_date);
+        if (params.product_name) query.set("product_name", params.product_name);
 
         const res = await fetchWithTimeout(`${API_URL}/orders?${query.toString()}`, {
           headers: getHeaders(),
@@ -122,9 +132,17 @@ export function useOrders() {
     [getHeaders]
   );
 
-  const fetchOrderStats = useCallback(async () => {
+  const fetchOrderStats = useCallback(async (params: OrderQueryParams = {}) => {
     try {
-      const res = await fetchWithTimeout(`${API_URL}/orders/count`, { headers: getHeaders() });
+      const query = new URLSearchParams();
+      if (params.order_status) query.set("order_status", params.order_status);
+      if (params.min_amount !== undefined) query.set("min_amount", String(params.min_amount));
+      if (params.max_amount !== undefined) query.set("max_amount", String(params.max_amount));
+      if (params.start_date) query.set("start_date", params.start_date);
+      if (params.end_date) query.set("end_date", params.end_date);
+      if (params.product_name) query.set("product_name", params.product_name);
+
+      const res = await fetchWithTimeout(`${API_URL}/orders/count?${query.toString()}`, { headers: getHeaders() });
       if (!res.ok) throw new Error("Failed to fetch order stats");
       const data = (await res.json()) as OrderStats;
       setOrderStats(data);

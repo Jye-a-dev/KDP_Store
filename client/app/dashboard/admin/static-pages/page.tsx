@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { StaticPage } from "@/types/api";
+import RichTextEditor from "@/components/common/RichTextEditor";
 
 export default function AdminStaticPages() {
   const { token } = useAuth();
@@ -436,12 +437,10 @@ export default function AdminStaticPages() {
                 <label className="block text-[10px] font-black uppercase tracking-wider text-[#111111] mb-1.5">
                   Nội Dung Trang (Hỗ trợ định dạng HTML)
                 </label>
-                <textarea
+                <RichTextEditor
                   value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="Nhập nội dung hiển thị của trang dạng mã HTML. Ví dụ: <p>Nội dung...</p> hoặc <h2>Tiêu đề phụ</h2>"
-                  rows={10}
-                  className="w-full px-3.5 py-3 border-2 border-[#111111] rounded-xl text-xs font-semibold focus:outline-none bg-white font-mono"
+                  onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+                  placeholder="Nhập nội dung hiển thị của trang..."
                 />
               </div>
 

@@ -8,6 +8,8 @@ import {
   Post,
   Query,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +18,13 @@ import {
   ApiOkResponse,
   ApiNotFoundResponse,
   ApiConflictResponse,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as path from 'path';
+import * as fs from 'fs';
+import { createClient } from '@supabase/supabase-js';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -28,10 +36,97 @@ import {
   DeleteProductResponseDto,
 } from './dto/product-response.dto';
 
+interface UploadedFileDto {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 @ApiTags('products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
+  @Post('upload-3d')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Upload file 3D (.gltf, .glb, .obj, .fbx)' })
+  async upload3D(@UploadedFile() file: any) {
+    if (!file) {
+      throw new Error('File upload thất bại.');
+    }
+    const uploadedFile = file as UploadedFileDto;
+    if (!uploadedFile.buffer) {
+      throw new Error('File buffer trống.');
+    }
+
+    const allowedExtensions = ['.gltf', '.glb', '.obj', '.fbx'];
+    const ext = path.extname(uploadedFile.originalname).toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      throw new Error(
+        'Chỉ chấp nhận file 3D định dạng .gltf, .glb, .obj, .fbx',
+      );
+    }
+
+    const supabaseUrl =
+      process.env.SUPABASE_URL || 'https://jvjzdxblwznjlhoxsjux.supabase.co';
+    const supabaseKey = process.env.SUPABASE_KEY;
+
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const filename = `model-${uniqueSuffix}${ext}`;
+
+    // Nếu đã cấu hình Supabase Key hợp lệ thì tải lên Supabase
+    if (supabaseKey && !supabaseKey.startsWith('YOUR_')) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { error } = await supabase.storage
+        .from('3d model')
+        .upload(filename, uploadedFile.buffer, {
+          contentType: uploadedFile.mimetype || 'application/octet-stream',
+          upsert: true,
+        });
+
+      if (error) {
+        throw new Error(`Upload lên Supabase thất bại: ${error.message}`);
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('3d model').getPublicUrl(filename);
+
+      return {
+        message: 'Upload file 3D lên Supabase thành công!',
+        url: publicUrl,
+      };
+    }
+
+    // Fallback: Lưu cục bộ nếu chưa cấu hình Supabase
+    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads', '3d');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, filename);
+    fs.writeFileSync(filePath, uploadedFile.buffer);
+
+    return {
+      message: 'Upload file 3D cục bộ thành công!',
+      url: `/uploads/3d/${filename}`,
+    };
+  }
 
   @Post('seed')
   @ApiOperation({ summary: 'Seed sản phẩm và danh mục từ Fake Store API' })
