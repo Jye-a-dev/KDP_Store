@@ -34,4 +34,11 @@ export class UpdateCategoryDto {
     example: 1,
   })
   sort_order?: number;
+
+  @ApiPropertyOptional({
+    description: 'Đường dẫn ảnh danh mục mới',
+    example: 'https://images.unsplash.com/...',
+    nullable: true,
+  })
+  image_url?: string;
 }

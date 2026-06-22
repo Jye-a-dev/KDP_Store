@@ -23,6 +23,7 @@ export default function CategoryModal({
   const { createCategory, updateCategory, isLoading: hookLoading, error: hookError } = useCategories();
   const [name, setName] = useState(category?.name ?? "");
   const [slug, setSlug] = useState(category?.slug ?? "");
+  const [imageUrl, setImageUrl] = useState(category?.image_url ?? "");
   const [parentId, setParentId] = useState<string>(
     category?.parent_id !== null && category?.parent_id !== undefined
       ? String(category.parent_id)
@@ -45,9 +46,9 @@ export default function CategoryModal({
 
     try {
       if (mode === "create") {
-        await createCategory(name.trim(), pId, showOnNavbar, slug);
+        await createCategory(name.trim(), pId, showOnNavbar, slug, undefined, imageUrl.trim());
       } else {
-        await updateCategory(category!.id, name.trim(), pId, showOnNavbar, slug);
+        await updateCategory(category!.id, name.trim(), pId, showOnNavbar, slug, undefined, imageUrl.trim());
       }
       onSaved();
     } catch (err) {
@@ -107,6 +108,19 @@ export default function CategoryModal({
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               placeholder="VD: ao-thun-oversize (Để trống sẽ sinh tự động)"
+              className="border-2 border-[#111111] py-2.5 px-4 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa]"
+            />
+          </div>
+
+          {/* Đường dẫn ảnh (Image URL) */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#111111]">
+              Đường dẫn ảnh (Image URL)
+            </label>
+            <input
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="VD: https://images.unsplash.com/photo-..."
               className="border-2 border-[#111111] py-2.5 px-4 rounded-xl text-sm font-semibold outline-none focus:bg-[#f7f9fa]"
             />
           </div>

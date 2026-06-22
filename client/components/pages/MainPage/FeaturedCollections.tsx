@@ -5,6 +5,7 @@ interface Category {
   parent_id: number | null;
   name: string;
   slug: string;
+  image_url?: string | null;
 }
 
 // Fallback images per category index
@@ -14,6 +15,32 @@ const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
   "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=600&q=80",
 ];
+
+const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
+  "trang-phuc": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=600&q=80",
+  "giay": "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=600&q=80",
+  "noi-that": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80",
+  "trang-suc": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
+};
+
+function getCategoryImage(cat: Category, index: number): string {
+  if (cat.image_url) return cat.image_url;
+  const slugKey = cat.slug.toLowerCase();
+  if (CATEGORY_DEFAULT_IMAGES[slugKey]) return CATEGORY_DEFAULT_IMAGES[slugKey];
+  if (slugKey.includes("trang-phuc") || slugKey.includes("ao") || slugKey.includes("quan")) {
+    return CATEGORY_DEFAULT_IMAGES["trang-phuc"];
+  }
+  if (slugKey.includes("giay") || slugKey.includes("sneaker")) {
+    return CATEGORY_DEFAULT_IMAGES["giay"];
+  }
+  if (slugKey.includes("noi-that") || slugKey.includes("ghe") || slugKey.includes("ban")) {
+    return CATEGORY_DEFAULT_IMAGES["noi-that"];
+  }
+  if (slugKey.includes("trang-suc") || slugKey.includes("nhan") || slugKey.includes("vong")) {
+    return CATEGORY_DEFAULT_IMAGES["trang-suc"];
+  }
+  return FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+}
 
 interface FeaturedCollectionsProps {
   categories: Category[];
@@ -70,7 +97,7 @@ export default function FeaturedCollections({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]}
+                src={getCategoryImage(cat, i)}
                 alt={cat.name}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />

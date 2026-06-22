@@ -33,6 +33,10 @@ export const pgProvider = {
           logger.log(
             '⚡ Đảm bảo cột sort_order trong bảng categories tồn tại.',
           );
+          await client.query(
+            'ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url VARCHAR(512);',
+          );
+          logger.log('⚡ Đảm bảo cột image_url trong bảng categories tồn tại.');
         } catch (dbErr) {
           logger.error(
             '❌ Lỗi khi cập nhật bảng categories:',

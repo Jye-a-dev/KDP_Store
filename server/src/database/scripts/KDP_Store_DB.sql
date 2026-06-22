@@ -48,6 +48,7 @@ CREATE TABLE categories (
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
     sort_order INT DEFAULT 0,
+    image_url VARCHAR(512),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

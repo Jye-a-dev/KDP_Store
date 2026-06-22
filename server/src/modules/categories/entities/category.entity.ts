@@ -5,6 +5,7 @@ export interface Category {
   slug: string;
   show_on_navbar: boolean;
   sort_order: number;
+  image_url: string | null;
   created_at: Date;
 }
 

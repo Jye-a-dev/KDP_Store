@@ -36,4 +36,11 @@ export class CreateCategoryDto {
     default: 0,
   })
   sort_order?: number;
+
+  @ApiPropertyOptional({
+    description: 'Đường dẫn ảnh danh mục',
+    example: 'https://images.unsplash.com/...',
+    nullable: true,
+  })
+  image_url?: string;
 }
