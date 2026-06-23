@@ -14,13 +14,13 @@ interface BabylonViewerProps {
 export default function BabylonViewer({ url }: BabylonViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cameraRef = useRef<ArcRotateCamera | null>(null);
+  const rangeRef = useRef<HTMLInputElement | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(50);
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
-    setZoom(val);
     if (cameraRef.current) {
       const min = cameraRef.current.lowerRadiusLimit || 0.1;
       const max = cameraRef.current.upperRadiusLimit || 15;
@@ -130,15 +130,12 @@ export default function BabylonViewer({ url }: BabylonViewerProps) {
     engine.runRenderLoop(() => {
       scene.render();
       // Sync zoom slider in real-time with camera radius changes (mouse wheel, pinch zoom, etc.)
-      if (cameraRef.current) {
+      if (cameraRef.current && rangeRef.current) {
         const min = cameraRef.current.lowerRadiusLimit || 0.1;
         const max = cameraRef.current.upperRadiusLimit || 15;
         const current = cameraRef.current.radius;
         const percent = ((max - current) / (max - min)) * 100;
-        setZoom((prev) => {
-          const rounded = Math.round(percent);
-          return prev !== rounded ? rounded : prev;
-        });
+        rangeRef.current.value = Math.round(percent).toString();
       }
     });
 
@@ -158,7 +155,7 @@ export default function BabylonViewer({ url }: BabylonViewerProps) {
 
   return (
     <div className="relative w-full h-full min-h-87.5 md:min-h-100 flex items-center justify-center">
-      <canvas ref={canvasRef} className="w-full h-full max-h-100 outline-none block" />
+      <canvas ref={canvasRef} className="w-full h-full max-h-100 outline-none block touch-none" />
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f7f9fa]/90 backdrop-blur-xs z-10">
           <div className="w-10 h-10 border-4 border-t-[#D12052] border-r-[#F45B26] border-neutral-200 rounded-full animate-spin"></div>
@@ -184,10 +181,11 @@ export default function BabylonViewer({ url }: BabylonViewerProps) {
             ➖
           </button>
           <input
+            ref={rangeRef}
             type="range"
             min="0"
             max="100"
-            value={zoom}
+            defaultValue={zoom}
             onChange={handleZoomChange}
             className="flex-1 accent-[#D12052] h-1.5 bg-neutral-200 rounded-lg appearance-none cursor-pointer outline-none border border-neutral-300"
           />
