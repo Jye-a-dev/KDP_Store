@@ -220,7 +220,7 @@ export default function ProductCard({
                   e.stopPropagation();
                   onEdit(product);
                 }}
-                className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all md:hover:scale-105 active:scale-95"
                 title="Sửa sản phẩm"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -237,7 +237,7 @@ export default function ProductCard({
                     onDelete(product.id);
                   }
                 }}
-                className="bg-[#D12052] text-white border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+                className="bg-[#D12052] text-white border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-lg w-8 h-8 flex items-center justify-center cursor-pointer transition-all md:hover:scale-105 active:scale-95"
                 title="Xóa sản phẩm"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -249,7 +249,7 @@ export default function ProductCard({
         ) : (
           <button
             onClick={handleWishlistToggle}
-            className={`absolute top-3 right-3 bg-white/90 backdrop-blur-sm border shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 z-20 ${
+            className={`absolute top-3 right-3 bg-white/90 backdrop-blur-sm border shadow-sm rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all duration-300 md:hover:scale-110 active:scale-95 z-20 ${
               isLiked ? "text-[#D12052] border-[#D12052] bg-[#D12052]/10" : "text-gray-500 border-transparent hover:bg-[#D12052] hover:border-[#D12052] hover:text-white"
             }`}
           >
@@ -285,7 +285,7 @@ export default function ProductCard({
           <Link
             href={`/products/${product.slug}`}
             onClick={(e) => e.stopPropagation()}
-            className="w-full bg-white text-[#111111] font-bold text-xs uppercase tracking-wider py-2.5 rounded-lg border-2 border-[#111111] shadow-[2px_2px_0px_#111111] hover:bg-neutral-50 active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all text-center flex items-center justify-center gap-1.5"
+            className="w-full bg-white text-[#111111] font-bold text-xs uppercase tracking-wider py-2.5 rounded-lg border-2 border-[#111111] shadow-[2px_2px_0px_#111111] md:hover:bg-neutral-50 active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111111] transition-all text-center flex items-center justify-center gap-1.5"
           >
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

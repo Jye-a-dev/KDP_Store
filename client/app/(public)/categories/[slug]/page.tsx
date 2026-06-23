@@ -244,7 +244,7 @@ function CategoryPageContent() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm trong danh mục..."
-                className="border-2 border-[#111111] py-2.5 pl-9 pr-4 rounded-xl text-xs font-semibold outline-none focus:bg-[#f7f9fa] w-full md:w-60 shadow-[3px_3px_0px_#111111]"
+                className="border-2 border-[#111111] py-2.5 pl-9 pr-4 rounded-xl text-base md:text-xs font-semibold outline-none focus:bg-[#f7f9fa] w-full md:w-60 shadow-[3px_3px_0px_#111111]"
               />
               <svg className="absolute left-3 top-3.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5">
                 <circle cx="11" cy="11" r="8" />
@@ -256,7 +256,7 @@ function CategoryPageContent() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setCategoryModal({ open: true, mode: "edit", category: activeCategory })}
-                  className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-[3px_3px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
+                  className="bg-[#F8DE22] text-[#111111] border-2 border-[#111111] px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-[3px_3px_0px_#111111] md:hover:translate-x-px md:hover:translate-y-px md:hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
                 >
                   Sửa danh mục
                 </button>
@@ -266,13 +266,13 @@ function CategoryPageContent() {
                       handleDeleteCategory(activeCategory.id);
                     }
                   }}
-                  className="bg-[#D12052] text-white border-2 border-[#111111] px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-[3px_3px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
+                  className="bg-[#D12052] text-white border-2 border-[#111111] px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-[3px_3px_0px_#111111] md:hover:translate-x-px md:hover:translate-y-px md:hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
                 >
                   Xóa
                 </button>
                 <button
                   onClick={() => setProductModal({ open: true, mode: "create" })}
-                  className="bg-[#03AED2] text-white border-2 border-[#111111] px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-[3px_3px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
+                  className="bg-[#03AED2] text-white border-2 border-[#111111] px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-[3px_3px_0px_#111111] md:hover:translate-x-px md:hover:translate-y-px md:hover:shadow-[2px_2px_0px_#111111] active:translate-x-0.75 active:translate-y-0.75 active:shadow-[0px_0px_0px_#111111] transition-all cursor-pointer"
                 >
                   + Thêm sản phẩm
                 </button>
@@ -297,7 +297,7 @@ function CategoryPageContent() {
                   setSortBy("default");
                   setSearchQuery("");
                 }}
-                className="px-3.5 py-1.5 bg-white border-2 border-[#111111] text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-neutral-100 transition-all cursor-pointer flex items-center gap-1"
+                className="px-3.5 py-1.5 bg-white border-2 border-[#111111] text-[10px] font-black uppercase tracking-wider rounded-xl shadow-[2px_2px_0px_#111111] active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0px_#111111] md:hover:bg-neutral-100 transition-all cursor-pointer flex items-center gap-1"
               >
                 ✕ Đặt lại bộ lọc
               </button>
@@ -320,10 +320,10 @@ function CategoryPageContent() {
                     key={item.value}
                     type="button"
                     onClick={() => setPriceFilter(item.value)}
-                    className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase transition-all cursor-pointer shadow-[2px_2px_0px_#111111] active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0px_#111111] ${
                       priceFilter === item.value
-                        ? "bg-[#F8DE22] text-[#111111] shadow-[2px_2px_0px_#111111]"
-                        : "bg-white text-[#111111] hover:bg-[#f3f4f6]"
+                        ? "bg-[#F8DE22] text-[#111111]"
+                        : "bg-white text-[#111111] md:hover:bg-[#f3f4f6]"
                     }`}
                   >
                     {item.label}
@@ -366,10 +366,10 @@ function CategoryPageContent() {
                     key={item.value}
                     type="button"
                     onClick={() => setStatusFilter(item.value)}
-                    className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg border-2 border-[#111111] text-[10px] font-bold uppercase transition-all cursor-pointer shadow-[2px_2px_0px_#111111] active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0px_#111111] ${
                       statusFilter === item.value
-                        ? "bg-[#03AED2] text-white shadow-[2px_2px_0px_#111111]"
-                        : "bg-white text-[#111111] hover:bg-[#f3f4f6]"
+                        ? "bg-[#03AED2] text-white"
+                        : "bg-white text-[#111111] md:hover:bg-[#f3f4f6]"
                     }`}
                   >
                     {item.label}

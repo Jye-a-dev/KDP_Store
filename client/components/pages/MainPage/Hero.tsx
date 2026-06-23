@@ -72,7 +72,7 @@ export default function Hero() {
         <div className="block">
           <a 
             href="#products-section" 
-            className="inline-block bg-[#F45B26] text-white px-8.75 md:px-11.25 py-3.5 md:py-4 uppercase text-[12px] md:text-[13px] font-bold tracking-[1px] shadow-[0_4px_15px_rgba(244,91,38,0.4)] transition-all duration-300 hover:bg-[#D12052] hover:shadow-[0_4px_15px_rgba(209,32,82,0.4)] hover:-translate-y-0.5 cursor-pointer"
+            className="inline-block bg-[#F45B26] text-white px-8.75 md:px-11.25 py-3.5 md:py-4 uppercase text-[12px] md:text-[13px] font-bold tracking-[1px] border-3 border-[#111111] shadow-[5px_5px_0px_#111111] md:hover:bg-[#D12052] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[4px_4px_0px_#111111] transition-all duration-200 cursor-pointer"
           >
             <EditableText contentKey="hero_btn" />
           </a>

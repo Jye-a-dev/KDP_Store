@@ -95,9 +95,13 @@ export class OrdersService {
         // Xác định giá mua (kiểm tra hạn khuyến mãi)
         let activePrice = Number(product.price);
         const now = new Date();
-        const hasDiscount = product.discount_price !== null && product.discount_price !== undefined;
-        const isSaleActive = hasDiscount &&
-          (!product.sale_start_date || new Date(product.sale_start_date) <= now) &&
+        const hasDiscount =
+          product.discount_price !== null &&
+          product.discount_price !== undefined;
+        const isSaleActive =
+          hasDiscount &&
+          (!product.sale_start_date ||
+            new Date(product.sale_start_date) <= now) &&
           (!product.sale_end_date || new Date(product.sale_end_date) >= now);
 
         if (isSaleActive) {

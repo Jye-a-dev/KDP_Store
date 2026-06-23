@@ -26,10 +26,10 @@ export default function ProductFilterBar({
       <div className="flex flex-wrap items-center gap-2.5">
         <button
           onClick={() => onSelectCategory(null)}
-          className={`font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 border-2 border-[#111111] transition-all duration-300 ${
+          className={`font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 border-2 border-[#111111] shadow-[2px_2px_0px_#111111] active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0px_#111111] transition-all duration-300 ${
             selectedCategory === null
-              ? "bg-[#D12052] text-white border-[#D12052] shadow-[2px_2px_0px_#111111]"
-              : "bg-white text-[#111111] hover:bg-[#F8DE22]"
+              ? "bg-[#D12052] text-white"
+              : "bg-white text-[#111111] md:hover:bg-[#F8DE22]"
           }`}
         >
           Tất cả
@@ -38,10 +38,10 @@ export default function ProductFilterBar({
           <div key={cat.id} className="relative group/cat">
             <button
               onClick={() => onSelectCategory(cat.id)}
-              className={`font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 border-2 border-[#111111] transition-all duration-300 ${
+              className={`font-bold uppercase text-[11px] tracking-[0.5px] px-5 py-2.5 border-2 border-[#111111] shadow-[2px_2px_0px_#111111] active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0px_#111111] transition-all duration-300 ${
                 selectedCategory === cat.id
-                  ? "bg-[#D12052] text-white border-[#D12052] shadow-[2px_2px_0px_#111111]"
-                  : "bg-white text-[#111111] hover:bg-[#F8DE22]"
+                  ? "bg-[#D12052] text-white"
+                  : "bg-white text-[#111111] md:hover:bg-[#F8DE22]"
               }`}
             >
               {cat.name}
@@ -86,7 +86,7 @@ export default function ProductFilterBar({
           placeholder="Tìm kiếm sản phẩm..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full border-2 border-[#111111] bg-white py-3 px-5 pl-12 text-sm text-[#111111] font-semibold outline-none shadow-[3px_3px_0px_#111111] focus:bg-[#f7f9fa]"
+          className="w-full border-2 border-[#111111] bg-white py-3 px-5 pl-12 text-base md:text-sm text-[#111111] font-semibold outline-none shadow-[3px_3px_0px_#111111] focus:bg-[#f7f9fa]"
         />
         <div className="absolute left-4 top-3.5 text-[#111111]">
           <svg
@@ -100,7 +100,7 @@ export default function ProductFilterBar({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="m21-21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z"
+              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z"
             />
           </svg>
         </div>

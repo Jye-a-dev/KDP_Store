@@ -232,7 +232,7 @@ export default function PublicNavbar() {
           {!isLoading && (
             <button
               onClick={() => setIsCartOpen(true)}
-              className="bg-white text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all hover:bg-[#F8DE22] hover:scale-105 active:scale-95 relative"
+              className="bg-white text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_#111111] rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-all hover:bg-[#F8DE22] md:hover:scale-105 active:scale-95 relative"
               title="Giỏ Hàng"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

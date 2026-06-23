@@ -95,7 +95,7 @@ export default function PublicFooter() {
             Social
           </h4>
           <p className="text-[#aaa] text-[13px] leading-[1.8]">
-            @zstudio.official
+            @kdp.official
             <br />
             Tiktok / Instagram / Facebook
           </p>
