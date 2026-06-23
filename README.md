@@ -1,3 +1,11 @@
+# 🛒 KDP Store - Hệ Thống Quản Lý & Cửa Hàng Trực Tuyến
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)
+
+> ⚠️ **LƯU Ý:** Đây là đồ án môn học, hoàn toàn phi thương mại và chỉ phục vụ cho mục đích học tập, nghiên cứu.
+
 **KDP Store** là một giải pháp nền tảng thương mại điện tử hiện đại, được tối ưu hóa để quản lý và vận hành cửa hàng trực tuyến (kinh doanh sản phẩm số, sách KDP - Kindle Direct Publishing, hoặc sản phẩm vật lý). Dự án được xây dựng với kiến trúc tối ưu, giao diện thân thiện với người dùng và hệ thống quản trị mạnh mẽ dành cho admin.
 
 ---
@@ -33,6 +41,8 @@ Dự án được phát triển dựa trên các công nghệ tiên tiến nhằ
 ---
 
 ## 📂 Cấu Trúc Thư Mục Dự Án
+
+```text
 KDP_Store/
 ├── client/               # Mã nguồn giao diện người dùng (Frontend)
 │   ├── public/           # Tài sản tĩnh (Hình ảnh, Thư mục biểu tượng)
@@ -50,18 +60,49 @@ KDP_Store/
 ├── .gitignore            # Các tệp tin Git bỏ qua không lưu trữ
 ├── README.md             # Tài liệu hướng dẫn dự án này
 └── package.json          # Danh sách thư viện phụ thuộc của dự án
-🚀 Hướng Dẫn Cài Đặt & Khởi ChạyĐể chạy dự án này dưới môi trường Local (máy tính cá nhân), hãy thực hiện theo các bước sau:📋 Yêu cầu hệ thốngĐã cài đặt Node.js (Phiên bản khuyến nghị: >= 16.x)Đã cài đặt GitHệ quản trị cơ sở dữ liệu tương ứng (MongoDB, MySQL...) đang chạy.📦 Các bước thực hiệnBước 1: Clone (Tải) kho lưu trữ về máyBashgit clone [https://github.com/Jye-a-dev/KDP_Store.git](https://github.com/Jye-a-dev/KDP_Store.git)
+```
+🚀 Hướng Dẫn Cài Đặt & Khởi Chạy
+Để chạy dự án này dưới môi trường Local (máy tính cá nhân), hãy thực hiện theo các bước sau:
+
+📋 Yêu cầu hệ thống
+Đã cài đặt Node.js (Phiên bản khuyến nghị: >= 16.x)
+
+Đã cài đặt Git
+
+Hệ quản trị cơ sở dữ liệu tương ứng (MongoDB, MySQL...) đang chạy.
+
+📦 Các bước thực hiện
+Bước 1: Clone (Tải) kho lưu trữ về máy
+
+```Bash
+git clone [https://github.com/Jye-a-dev/KDP_Store.git](https://github.com/Jye-a-dev/KDP_Store.git)
 cd KDP_Store
-Bước 2: Cấu hình biến môi trường (Environment Variables)Di chuyển vào thư mục server/ (hoặc thư mục gốc tùy cấu trúc backend của bạn). Tạo tệp .env dựa trên tệp mẫu và điền các thông số cần thiết:Đoạn mãPORT=5000
+```
+Bước 2: Cấu hình biến môi trường (Environment Variables)
+
+Di chuyển vào thư mục server/ (hoặc thư mục gốc tùy cấu trúc backend của bạn). Tạo tệp .env dựa trên tệp mẫu và điền các thông số cần thiết:
+
+Đoạn mã
+```.env
+PORT=5000
 MONGO_URI=mongodb://localhost:27017/kdp_store
 JWT_SECRET=chuoibaomatcuaban_o_day
 PAYMENT_GATEWAY_KEY=khoa_thanh_toan_cua_ban
-Bước 3: Cài đặt thư viện & Khởi chạy BackendBashcd server
+```
+Bước 3: Cài đặt thư viện & Khởi chạy Backend
+
+```Bash
+cd server
 npm install
 npm start # hoặc npm run dev
-Backend của bạn sẽ chạy tại địa chỉ: http://localhost:5000Bước 4: Cài đặt thư viện & Khởi chạy FrontendBashcd ../client
+```
+Backend của bạn sẽ chạy tại địa chỉ: http://localhost:5000
+
+Bước 4: Cài đặt thư viện & Khởi chạy Frontend
+
+```Bash
+cd ../client
 npm install
 npm start # hoặc npm run dev
-
-
-## Đây là đồ án môn học, không sử dụng cho mục đích thương mại
+```
+Giao diện ứng dụng sẽ tự động mở tại địa chỉ: http://localhost:3000
