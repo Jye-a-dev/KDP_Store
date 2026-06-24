@@ -1,151 +1,188 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Animated, Easing } from 'react-native';
+
+import React, { useEffect, useRef, useState, ReactNode } from 'react';
+import { View, Text, Animated, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppRoutes } from './routes/app_routes';
-import { HomePage } from '../features/public/pages/home_page';
 import { LoginPage } from '../features/auth/pages/login_page';
 import { RegisterPage } from '../features/auth/pages/register_page';
 import { OnboardingPage } from '../features/auth/pages/onboarding_page';
-import { DashboardPage } from '../features/dashboard/pages/dashboard_page';
 import { AuthProvider, useAuth } from '../features/auth/controllers/auth_context';
+import { CartProvider } from '../features/cart/controllers/cart_context';
+import { MainTabNavigator } from '../shared/navigation/bottom_tab_navigator';
+import { splashStyles, adminStyles } from './app.styles';
+import { Easing } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 
-function AppNavigator() {
-  const { isLoading, hasCompletedOnboarding, isAuthenticated } = useAuth();
+// ─── Splash Screen ────────────────────────────────────────────────────────────
 
-  if (isLoading) {
-    return <KDPLoader />;
-  }
+function KDPSplash({ onFinish }: { onFinish: () => void }) {
+  const logoScale = useRef(new Animated.Value(0.6)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const tagOpacity = useRef(new Animated.Value(0)).current;
+  const exitOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(logoScale, { toValue: 1, friction: 5, useNativeDriver: true }),
+      ]),
+      Animated.delay(200),
+      Animated.timing(tagOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(900),
+      Animated.timing(exitOpacity, { toValue: 0, duration: 350, useNativeDriver: true }),
+    ]).start(() => onFinish());
+  }, []);
 
   return (
+    <Animated.View style={[splashStyles.root, { opacity: exitOpacity }]}>
+      <Animated.View style={[splashStyles.logoWrap, { transform: [{ scale: logoScale }], opacity: logoOpacity }]}>
+        <View style={splashStyles.logoShadow} />
+        <View style={splashStyles.logoCard}>
+          <View style={splashStyles.kBadge}>
+            <Text style={splashStyles.kText}>K</Text>
+          </View>
+          <View style={splashStyles.dpRow}>
+            <Text style={splashStyles.dpText}>DP</Text>
+          </View>
+          <View style={splashStyles.storeBadge}>
+            <Text style={splashStyles.storeText}>STORE</Text>
+          </View>
+        </View>
+      </Animated.View>
+      <Animated.Text style={[splashStyles.tagline, { opacity: tagOpacity }]}>
+        THỜI TRANG · 3D · PHONG CÁCH
+      </Animated.Text>
+      <View style={splashStyles.strip}>
+        <Text style={splashStyles.stripText}>KDP STORE</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+// ─── Admin redirect ───────────────────────────────────────────────────────────
+
+function AdminRedirectScreen() {
+  const { logout } = useAuth();
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.06, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <View style={adminStyles.root}>
+      <View style={adminStyles.stripe}>
+        <Text style={adminStyles.stripeText}>KDP STORE — ADMIN</Text>
+      </View>
+      <View style={adminStyles.card}>
+        <View style={adminStyles.cardShadow} />
+        <View style={adminStyles.cardInner}>
+          <Text style={adminStyles.emoji}>🔐</Text>
+          <Text style={adminStyles.title}>Tài khoản Admin</Text>
+          <Text style={adminStyles.desc}>
+            Trình duyệt web đã được mở để đến trang quản trị KDP Store.
+          </Text>
+          <Animated.View style={{ transform: [{ scale: pulse }], width: '100%' }}>
+            <Text
+              style={adminStyles.linkBtn}
+              onPress={() => Linking.openURL('https://kdp-store-pi.vercel.app/')}
+            >
+              Mở lại Admin Dashboard →
+            </Text>
+          </Animated.View>
+          <Text style={adminStyles.logoutBtn} onPress={() => logout()}>
+            Đăng xuất
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ─── AppNavigator ─────────────────────────────────────────────────────────────
+
+function AppNavigator() {
+  const { isLoading, hasCompletedOnboarding, isAuthenticated, user, token } = useAuth();
+  const [splashDone, setSplashDone] = useState(false);
+
+  // Auth guard: admin → open web
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'admin') {
+      Linking.openURL('https://kdp-store-pi.vercel.app/');
+    }
+  }, [isAuthenticated, user]);
+
+  // Phase 1: Splash
+  if (!splashDone) {
+    return <KDPSplash onFinish={() => setSplashDone(true)} />;
+  }
+
+  // Phase 2: Wait for AsyncStorage hydration
+  if (isLoading) {
+    return <View style={splashStyles.root} />;
+  }
+
+  // Phase 3: Admin screen
+  if (isAuthenticated && user?.role === 'admin') {
+    return <AdminRedirectScreen />;
+  }
+
+  // Phase 4: Auth flow or main app
+  return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!hasCompletedOnboarding ? (
-          // Onboarding Flow: User must complete onboarding first
+      {!hasCompletedOnboarding ? (
+        // Onboarding (one-time)
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name={AppRoutes.onboarding} component={OnboardingPage} />
-        ) : !isAuthenticated ? (
-          // Auth Flow: Login or Register
-          <>
-            <Stack.Screen name={AppRoutes.login} component={LoginPage} />
-            <Stack.Screen name={AppRoutes.register} component={RegisterPage} />
-            <Stack.Screen name={AppRoutes.home} component={HomePage} />
-          </>
-        ) : (
-          // Protected Flow: Access Dashboard only
-          <Stack.Screen name={AppRoutes.dashboard} component={DashboardPage} />
-        )}
-      </Stack.Navigator>
+        </Stack.Navigator>
+      ) : !isAuthenticated ? (
+        // Auth stack
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name={AppRoutes.login} component={LoginPage} />
+          <Stack.Screen name={AppRoutes.register} component={RegisterPage} />
+        </Stack.Navigator>
+      ) : (
+        // Main app with bottom tabs
+        <MainTabNavigator />
+      )}
     </NavigationContainer>
   );
 }
+
+// ─── CartAwareProvider (reads auth, passes to CartProvider) ─────────────────
+
+function CartAwareProvider({ children }: { children: ReactNode }) {
+  const { user, token } = useAuth();
+  return (
+    <CartProvider userId={user?.id} token={token ?? undefined}>
+      {children}
+    </CartProvider>
+  );
+}
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <AppNavigator />
+        <CartAwareProvider>
+          <AppNavigator />
+        </CartAwareProvider>
       </AuthProvider>
       <StatusBar style="auto" />
     </SafeAreaProvider>
   );
 }
 
-// ─── KDP Themed Loader ────────────────────────────────────────────────────────
-
-function KDPLoader() {
-  const bagY = useRef(new Animated.Value(0)).current;
-  const dot1 = useRef(new Animated.Value(0.3)).current;
-  const dot2 = useRef(new Animated.Value(0.3)).current;
-  const dot3 = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    // Bag bounce loop
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(bagY, { toValue: -14, duration: 380, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(bagY, { toValue: 0, duration: 380, easing: Easing.in(Easing.bounce), useNativeDriver: true }),
-        Animated.delay(200),
-      ])
-    ).start();
-
-    // Staggered dot pulse
-    const pulse = (anim: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(anim, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0.3, duration: 300, useNativeDriver: true }),
-          Animated.delay(600 - delay),
-        ])
-      );
-
-    Animated.parallel([
-      pulse(dot1, 0),
-      pulse(dot2, 200),
-      pulse(dot3, 400),
-    ]).start();
-  }, []);
-
-  return (
-    <View style={loaderStyles.root}>
-      {/* Brand stripe top */}
-      <View style={loaderStyles.stripe}>
-        <Text style={loaderStyles.stripeText}>KDP STORE</Text>
-      </View>
-
-      {/* Center card */}
-      <View style={loaderStyles.cardWrap}>
-        <View style={loaderStyles.cardShadow} />
-        <View style={loaderStyles.card}>
-          {/* Animated shopping bag */}
-          <Animated.Text style={[loaderStyles.bagIcon, { transform: [{ translateY: bagY }] }]}>
-            🛍️
-          </Animated.Text>
-
-          <Text style={loaderStyles.tagline}>ĐANG TẢI SẢN PHẨM</Text>
-
-          {/* Pulsing dots */}
-          <View style={loaderStyles.dots}>
-            {[dot1, dot2, dot3].map((anim, i) => (
-              <Animated.View key={i} style={[loaderStyles.dot, { opacity: anim }]} />
-            ))}
-          </View>
-        </View>
-      </View>
-
-      {/* Bottom ticker */}
-      <View style={loaderStyles.ticker}>
-        <Text style={loaderStyles.tickerText}>THỜI TRANG · 3D · PHONG CÁCH</Text>
-      </View>
-    </View>
-  );
-}
-
-const loaderStyles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8DE22', alignItems: 'center', justifyContent: 'center' },
-
-  stripe: { position: 'absolute', top: 0, left: 0, right: 0, height: 52, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
-  stripeText: { color: '#F8DE22', fontSize: 16, fontWeight: '900', letterSpacing: 4 },
-
-  cardWrap: { position: 'relative', marginTop: 16 },
-  cardShadow: { position: 'absolute', top: 6, left: 6, right: -6, bottom: -6, backgroundColor: '#111', borderRadius: 16 },
-  card: { width: 220, backgroundColor: '#fff', borderWidth: 3, borderColor: '#111', borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingVertical: 28, gap: 10 },
-
-  bagIcon: { fontSize: 52 },
-  tagline: { fontSize: 11, fontWeight: '900', color: '#111', letterSpacing: 1.5, marginTop: 4 },
-
-  dots: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#111' },
-
-  ticker: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
-  tickerText: { color: '#F8DE22', fontSize: 11, fontWeight: '900', letterSpacing: 2 },
-});
-
-const styles = StyleSheet.create({});
-
 export default App;
-

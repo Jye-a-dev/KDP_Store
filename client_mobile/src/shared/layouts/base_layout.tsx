@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppTheme } from '../../app/theme/app_theme';
+import { styles } from './base_layout.styles';
 
 interface BaseLayoutProps {
   children: React.ReactNode;
@@ -20,17 +20,3 @@ export function BaseLayout({ children, header, footer }: BaseLayoutProps) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: AppTheme.colors.background,
-  },
-  container: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  content: {
-    flex: 1,
-  },
-});

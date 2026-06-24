@@ -23,5 +23,9 @@ export const API_ENDPOINTS = {
   register: `${API_BASE_URL}/auth/register`,
   pageContents: `${API_BASE_URL}/page-contents`,
   products: `${API_BASE_URL}/products`,
+  product: (id: number) => `${API_BASE_URL}/products/${id}`,
   categories: `${API_BASE_URL}/categories`,
+  orders: `${API_BASE_URL}/orders`,
+  cart: `${API_BASE_URL}/cart`,
 } as const;
+
