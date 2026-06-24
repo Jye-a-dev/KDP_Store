@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { StaticPage } from "@/types/api";
+import HtmlEditor from "@/components/common/HtmlEditor";
+import CreatePageModal from "./CreatePageModal";
 
 // Helper to convert dynamic text strings into valid paths (slugs)
 const slugify = (text: string) => {
@@ -18,208 +20,6 @@ const slugify = (text: string) => {
     .replace(/-+/g, "-"); // collapse dashes
 };
 
-// Rich Text Editor Component using contentEditable for Neobrutalist design
-interface HtmlEditorProps {
-  value: string;
-  onChange: (val: string) => void;
-}
-
-function HtmlEditor({ value, onChange }: HtmlEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [isHtmlMode, setIsHtmlMode] = useState(false);
-  const [htmlValue, setHtmlValue] = useState(value);
-
-  // Sync value when modified externally
-  useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
-    }
-    setHtmlValue(value);
-  }, [value]);
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      const html = editorRef.current.innerHTML;
-      setHtmlValue(html);
-      onChange(html);
-    }
-  };
-
-  const handleHtmlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value;
-    setHtmlValue(val);
-    onChange(val);
-    if (editorRef.current) {
-      editorRef.current.innerHTML = val;
-    }
-  };
-
-  const execCommand = (command: string, val: string = "") => {
-    document.execCommand(command, false, val);
-    handleInput();
-  };
-
-  return (
-    <div className="border-2 border-[#111111] rounded-xl overflow-hidden bg-white shadow-[3px_3px_0px_#111111] transition-all">
-      {/* Editor Toolbar */}
-      <div className="bg-[#f3f4f6] border-b-2 border-[#111111] p-2 flex flex-wrap gap-1.5 items-center select-none">
-        {!isHtmlMode ? (
-          <>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("bold");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-xs rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Chữ đậm"
-            >
-              B
-            </button>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("italic");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-xs rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Chữ nghiêng"
-            >
-              I
-            </button>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("underline");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-xs rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Gạch chân"
-            >
-              U
-            </button>
-            <div className="w-px h-6 bg-[#111111]/20 mx-1" />
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("formatBlock", "<h1>");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Heading 1"
-            >
-              H1
-            </button>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("formatBlock", "<h2>");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Heading 2"
-            >
-              H2
-            </button>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("formatBlock", "<p>");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Đoạn văn"
-            >
-              P
-            </button>
-            <div className="w-px h-6 bg-[#111111]/20 mx-1" />
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("insertUnorderedList");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Danh sách không thứ tự"
-            >
-              • List
-            </button>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("insertOrderedList");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Danh sách có thứ tự"
-            >
-              1. List
-            </button>
-            <div className="w-px h-6 bg-[#111111]/20 mx-1" />
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const url = prompt("Nhập liên kết URL:");
-                if (url) execCommand("createLink", url);
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Thêm liên kết"
-            >
-              Link 🔗
-            </button>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                execCommand("removeFormat");
-              }}
-              className="px-2.5 py-1.5 bg-white border-2 border-[#111111] hover:bg-[#F8DE22] font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-[1px_1px_0px_#111111] active:translate-y-px active:shadow-none"
-              title="Xóa định dạng"
-            >
-              Clear 🧹
-            </button>
-          </>
-        ) : (
-          <span className="text-[10px] font-black text-neutral-500 px-2 uppercase tracking-wide">
-            Chế độ sửa mã nguồn HTML
-          </span>
-        )}
-
-        <button
-          type="button"
-          onClick={() => setIsHtmlMode(!isHtmlMode)}
-          className={`ml-auto px-3 py-1.5 border-2 border-[#111111] text-[9px] font-black uppercase rounded-lg transition-all cursor-pointer ${
-            isHtmlMode ? "bg-[#111111] text-white" : "bg-[#F8DE22] text-[#111111] shadow-[1.5px_1.5px_0px_#111111] active:translate-y-px"
-          }`}
-        >
-          {isHtmlMode ? "👁️ Trực quan" : "‹› Mã HTML"}
-        </button>
-      </div>
-
-      {/* Editor Content Area */}
-      <div className="relative">
-        <div
-          ref={editorRef}
-          contentEditable
-          onInput={handleInput}
-          className={`p-4 min-h-87.5 outline-none prose max-w-none text-[#222] font-semibold text-xs leading-relaxed font-sans bg-white ${
-            isHtmlMode ? "hidden" : "block"
-          }`}
-          style={{ minHeight: "350px" }}
-        />
-        <textarea
-          value={htmlValue}
-          onChange={handleHtmlChange}
-          className={`w-full p-4 min-h-87.5 font-mono text-xs text-amber-200 bg-[#1e1e1e] outline-none border-none leading-relaxed ${
-            isHtmlMode ? "block" : "hidden"
-          }`}
-          style={{ minHeight: "350px", resize: "vertical" }}
-        />
-      </div>
-    </div>
-  );
-}
 
 export default function ExploreServiceDetailPage() {
   const params = useParams();
@@ -242,10 +42,6 @@ export default function ExploreServiceDetailPage() {
 
   // Create states
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newSlug, setNewSlug] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [newGroup, setNewGroup] = useState<"service" | "explore">("service");
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -338,45 +134,6 @@ export default function ExploreServiceDetailPage() {
     }
   };
 
-  const handleCreate = async () => {
-    if (!newTitle.trim() || !newSlug.trim() || !newContent.trim()) {
-      alert("Vui lòng điền đầy đủ các thông tin!");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_URL}/static-pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: newTitle,
-          slug: newSlug,
-          content: newContent,
-          group_type: newGroup,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message ?? "Lỗi khi tạo trang tĩnh mới!");
-      }
-
-      const createdPage = await res.json();
-      setShowCreateModal(false);
-      setNewTitle("");
-      setNewSlug("");
-      setNewContent("");
-      setNewGroup("service");
-      
-      alert("Tạo trang tĩnh mới thành công!");
-      router.push(`/explore-services/${createdPage.slug}`);
-    } catch (err: any) {
-      alert(err.message ?? "Có lỗi xảy ra!");
-    }
-  };
 
   if (isLoading) {
     return (
@@ -592,110 +349,17 @@ export default function ExploreServiceDetailPage() {
       </div>
 
       {/* Create New Page Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-[#111111]/60 backdrop-blur-[2px] flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl bg-white border-3 border-[#111111] rounded-2xl shadow-[6px_6px_0px_#111111] overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Modal header */}
-            <div className="px-6 py-4.5 bg-[#f9fafb] border-b-2 border-[#111111] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-[#03AED2] border-2 border-[#111111] rounded-full inline-block" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-[#111111]">
-                  Tạo Trang Tĩnh Mới
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="w-7 h-7 border-2 border-[#111111] rounded-lg flex items-center justify-center text-xs font-black hover:bg-[#E11D48] hover:text-white cursor-pointer transition-colors shadow-[1px_1px_0px_#111111]"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal content */}
-            <div className="p-6 flex flex-col gap-4 max-h-[80vh] overflow-y-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-[#111111] mb-1.5">
-                    Tiêu đề trang
-                  </label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => {
-                      setNewTitle(e.target.value);
-                      setNewSlug(slugify(e.target.value));
-                    }}
-                    placeholder="Ví dụ: Hướng dẫn mua hàng"
-                    className="w-full px-3.5 py-3 border-2 border-[#111111] rounded-xl text-xs font-bold focus:outline-none bg-white text-black"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-[#111111] mb-1.5">
-                    Đường dẫn tĩnh (Slug)
-                  </label>
-                  <input
-                    type="text"
-                    value={newSlug}
-                    onChange={(e) => setNewSlug(slugify(e.target.value))}
-                    placeholder="huong-dan-mua-hang"
-                    className="w-full px-3.5 py-3 border-2 border-[#111111] rounded-xl text-xs font-bold focus:outline-none bg-white text-black"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-[#111111] mb-1.5">
-                  Phân nhóm trang
-                </label>
-                <div className="flex gap-3">
-                  {[
-                    { value: "service", label: "Chính Sách Dịch Vụ" },
-                    { value: "explore", label: "Khám Phá KDP Store" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setNewGroup(option.value as any)}
-                      className={`px-4 py-2 border-2 border-[#111111] text-xs font-extrabold uppercase rounded-xl transition-all cursor-pointer ${
-                        newGroup === option.value
-                          ? "bg-[#03AED2] text-white shadow-[2px_2px_0px_#111111]"
-                          : "bg-white text-[#111111] hover:bg-neutral-50"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-[#111111] mb-1.5">
-                  Nội dung trang
-                </label>
-                <HtmlEditor value={newContent} onChange={setNewContent} />
-              </div>
-
-              <div className="flex justify-end gap-3 mt-3 pt-4 border-t border-[#111111]/10">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4.5 py-2.5 border-2 border-[#111111] text-[#111111] text-xs font-black uppercase tracking-wider rounded-xl hover:bg-gray-100 cursor-pointer transition-colors"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreate}
-                  className="px-5 py-2.5 bg-[#03AED2] text-white text-xs font-black uppercase tracking-wider rounded-xl border-2 border-[#111111] shadow-[2px_2px_0px_#111111] hover:translate-x-px hover:translate-y-px hover:shadow-[1px_1px_0px_#111111] transition-all cursor-pointer"
-                >
-                  ➕ Tạo trang mới
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreatePageModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={(createdPage) => {
+          setShowCreateModal(false);
+          alert("Tạo trang tĩnh mới thành công!");
+          router.push(`/explore-services/${createdPage.slug}`);
+        }}
+        token={token ?? ""}
+        apiUrl={API_URL}
+      />
     </div>
   );
 }

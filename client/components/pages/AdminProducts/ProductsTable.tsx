@@ -1,6 +1,8 @@
 import { Product, Category } from "@/types/api";
 import { formatVNDFull } from "@/components/pages/admin/helpers";
 import AdminPagination from "@/components/pages/admin/AdminPagination";
+import CategoryChips from "./CategoryChips";
+import ProductsTableControls from "./ProductsTableControls";
 
 interface ProductsTableProps {
   products: Product[];
@@ -142,89 +144,23 @@ export default function ProductsTable({
   return (
     <div className="space-y-6">
       {/* Category Chips Selector */}
-      <div className="flex items-center justify-between gap-4 flex-wrap bg-white border-2 border-[#111111] p-4 rounded-2xl shadow-[3px_3px_0px_#111111]">
-        <div className="flex flex-col gap-1.5 w-full">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#03AED2]">
-            Lọc theo danh mục
-          </span>
-          <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
-            <button
-              type="button"
-              onClick={() => onSelectedCategoryChange("")}
-              className={`px-3.5 py-1.5 rounded-xl border-2 border-[#111111] text-[11px] font-extrabold uppercase transition-all shadow-[2px_2px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#111111] cursor-pointer ${selectedCategory === ""
-                ? "bg-[#F8DE22] text-[#111111]"
-                : "bg-white text-[#555] hover:bg-[#f7f9fa]"
-                }`}
-            >
-              Tất cả
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => onSelectedCategoryChange(String(cat.id))}
-                className={`px-3.5 py-1.5 rounded-xl border-2 border-[#111111] text-[11px] font-extrabold uppercase transition-all shadow-[2px_2px_0px_#111111] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#111111] cursor-pointer ${selectedCategory === String(cat.id)
-                  ? "bg-[#F8DE22] text-[#111111]"
-                  : "bg-white text-[#555] hover:bg-[#f7f9fa]"
-                  }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <CategoryChips
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectedCategoryChange={onSelectedCategoryChange}
+      />
 
       {/* Main Container */}
       <div className="bg-white border-2 border-[#111111] rounded-2xl shadow-[4px_4px_0px_#111111] overflow-hidden">
         {/* Table/Group Controls Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b-2 border-[#111111] gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            {/* View Mode Switcher */}
-            <div className="flex border-2 border-[#111111] rounded-xl overflow-hidden shadow-[2px_2px_0px_#111111]">
-              <button
-                type="button"
-                onClick={() => onViewModeChange("table")}
-                className={`px-4 py-2 text-[11px] font-extrabold uppercase tracking-wider cursor-pointer transition-colors ${viewMode === "table" ? "bg-[#111111] text-white" : "bg-white text-[#111111] hover:bg-[#f7f9fa]"
-                  }`}
-              >
-                Dạng Bảng
-              </button>
-              <button
-                type="button"
-                onClick={() => onViewModeChange("grouped")}
-                className={`px-4 py-2 text-[11px] font-extrabold uppercase tracking-wider cursor-pointer border-l-2 border-[#111111] transition-colors ${viewMode === "grouped" ? "bg-[#111111] text-white" : "bg-white text-[#111111] hover:bg-[#f7f9fa]"
-                  }`}
-              >
-                Dạng Nhóm
-              </button>
-            </div>
-          </div>
-
-          {/* Filters & Search */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <select
-              value={publishedFilter}
-              onChange={(e) => onPublishedFilterChange(e.target.value)}
-              className="border-2 border-[#111111] py-2 px-4 rounded-xl text-[12px] font-semibold outline-none bg-white cursor-pointer shadow-[2px_2px_0px_#111111]"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="true">Đang hiển thị</option>
-              <option value="false">Đang ẩn</option>
-            </select>
-            <div className="relative shadow-[2px_2px_0px_#111111] rounded-xl overflow-hidden border-2 border-[#111111]">
-              <input
-                value={search}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Tìm tên hoặc SKU..."
-                className="py-2 pl-9 pr-4 rounded-xl text-[12px] font-semibold outline-none bg-white focus:bg-[#f7f9fa] w-56 border-none"
-              />
-              <svg className="absolute left-3 top-2.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5">
-                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <ProductsTableControls
+          viewMode={viewMode}
+          onViewModeChange={onViewModeChange}
+          publishedFilter={publishedFilter}
+          onPublishedFilterChange={onPublishedFilterChange}
+          search={search}
+          onSearchChange={onSearchChange}
+        />
 
         {/* Loading Spinner */}
         {isLoading ? (
