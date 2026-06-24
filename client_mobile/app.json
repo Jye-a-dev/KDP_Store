@@ -6,6 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "kdpstore",
+    "experiments": {
+      "typedRoutes": false
+    },
     "ios": {
       "supportsTablet": true
     },

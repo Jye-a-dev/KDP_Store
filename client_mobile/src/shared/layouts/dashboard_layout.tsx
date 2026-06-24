@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { AppRoutes } from '../../app/routes/app_routes';
 import { AppTheme } from '../../app/theme/app_theme';
 import { BaseLayout } from './base_layout';
+
+import { useAuth } from '../../features/auth/controllers/auth_context';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -11,14 +11,10 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
-  const navigation = useNavigation<any>();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    // Reset navigation stack to Home screen to prevent back swipe
-    navigation.reset({
-      index: 0,
-      routes: [{ name: AppRoutes.home }],
-    });
+  const handleLogout = async () => {
+    await logout();
   };
 
   const header = (

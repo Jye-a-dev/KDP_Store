@@ -15,26 +15,36 @@ import { useNavigation } from '@react-navigation/native';
 import { AppRoutes } from '../../../app/routes/app_routes';
 import { useAuth } from '../controllers/auth_context';
 
-export function LoginPage() {
+export function RegisterPage() {
   const navigation = useNavigation<any>();
-  const { login } = useAuth();
+  const { register } = useAuth();
 
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError('Vui lòng điền đầy đủ thông tin đăng nhập.');
+  const handleRegister = async () => {
+    if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+      setError('Vui lòng điền đầy đủ các thông tin đăng ký.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      await register(fullName.trim(), email.trim(), password);
     } catch (err: any) {
-      setError(err?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
+      setError(err?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -60,9 +70,9 @@ export function LoginPage() {
           <View style={styles.cardWrap}>
             <View style={styles.cardShadow} />
             <View style={styles.card}>
-              {/* Title with yellow underline highlight */}
+              {/* Title */}
               <View style={styles.titleWrap}>
-                <Text style={styles.title}>ĐĂNG NHẬP</Text>
+                <Text style={styles.title}>ĐĂNG KÝ</Text>
                 <View style={styles.titleBar} />
               </View>
 
@@ -72,6 +82,18 @@ export function LoginPage() {
                   <Text style={styles.errorText}>⚠️ {error}</Text>
                 </View>
               )}
+
+              {/* Họ và tên */}
+              <View style={styles.fieldWrap}>
+                <Text style={styles.label}>HỌ VÀ TÊN</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nguyễn Văn A"
+                  placeholderTextColor="#aaa"
+                  value={fullName}
+                  onChangeText={setFullName}
+                />
+              </View>
 
               {/* Email */}
               <View style={styles.fieldWrap}>
@@ -89,12 +111,7 @@ export function LoginPage() {
 
               {/* Password */}
               <View style={styles.fieldWrap}>
-                <View style={styles.labelRow}>
-                  <Text style={styles.label}>MẬT KHẨU</Text>
-                  <Pressable>
-                    <Text style={styles.forgot}>QUÊN MẬT KHẨU?</Text>
-                  </Pressable>
-                </View>
+                <Text style={styles.label}>MẬT KHẨU</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="••••••••"
@@ -105,37 +122,34 @@ export function LoginPage() {
                 />
               </View>
 
+              {/* Confirm Password */}
+              <View style={styles.fieldWrap}>
+                <Text style={styles.label}>XÁC NHẬN MẬT KHẨU</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor="#aaa"
+                  secureTextEntry
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+              </View>
+
               {/* Submit */}
               <View style={styles.btnWrap}>
                 <View style={styles.btnShadow} />
-                <Pressable style={styles.btn} onPress={handleLogin} disabled={loading}>
+                <Pressable style={styles.btn} onPress={handleRegister} disabled={loading}>
                   {loading
                     ? <ActivityIndicator color="#fff" />
-                    : <Text style={styles.btnText}>ĐĂNG NHẬP VÀO HỆ THỐNG</Text>}
-                </Pressable>
-              </View>
-
-              {/* Divider */}
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>HOẶC</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Google */}
-              <View style={styles.googleWrap}>
-                <View style={styles.googleShadow} />
-                <Pressable style={styles.googleBtn}>
-                  <Text style={styles.googleIcon}>G</Text>
-                  <Text style={styles.googleText}>TIẾP TỤC VỚI GOOGLE</Text>
+                    : <Text style={styles.btnText}>ĐĂNG KÝ TÀI KHOẢN MỚI</Text>}
                 </Pressable>
               </View>
 
               {/* Footer link */}
-              <Pressable onPress={() => navigation.navigate(AppRoutes.register)} style={styles.footer}>
+              <Pressable onPress={() => navigation.navigate(AppRoutes.login)} style={styles.footer}>
                 <Text style={styles.footerText}>
-                  CHƯA CÓ TÀI KHOẢN?{' '}
-                  <Text style={styles.footerLink}>ĐĂNG KÝ</Text>
+                  ĐÃ CÓ TÀI KHOẢN?{' '}
+                  <Text style={styles.footerLink}>ĐĂNG NHẬP</Text>
                 </Text>
               </Pressable>
             </View>
@@ -157,7 +171,7 @@ const styles = StyleSheet.create({
   },
   brand: { color: '#F8DE22', fontSize: 16, fontWeight: '900', letterSpacing: 4 },
 
-  scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 24, paddingVertical: 32 },
 
   cardWrap: { width: '100%', maxWidth: 380, position: 'relative' },
   cardShadow: {
@@ -173,7 +187,7 @@ const styles = StyleSheet.create({
   titleWrap: { marginBottom: 20 },
   title: { fontSize: 24, fontWeight: '900', color: '#111' },
   titleBar: {
-    position: 'absolute', bottom: 2, left: 0, width: 80, height: 8,
+    position: 'absolute', bottom: 2, left: 0, width: 64, height: 8,
     backgroundColor: '#F8DE22', zIndex: -1,
   },
 
@@ -187,9 +201,7 @@ const styles = StyleSheet.create({
   errorText: { color: '#D12052', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
 
   fieldWrap: { marginBottom: 14 },
-  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   label: { fontSize: 11, fontWeight: '900', color: '#111', letterSpacing: 0.8, marginBottom: 6 },
-  forgot: { fontSize: 10, fontWeight: '900', color: '#555' },
   input: {
     height: 48,
     borderWidth: 2, borderColor: '#111', borderRadius: 12,
@@ -210,25 +222,9 @@ const styles = StyleSheet.create({
   },
   btnText: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
 
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(17,17,17,0.12)' },
-  dividerText: { marginHorizontal: 12, fontSize: 10, fontWeight: '900', color: '#aaa', letterSpacing: 1 },
-
-  googleWrap: { height: 48, position: 'relative' },
-  googleShadow: {
-    position: 'absolute', top: 2, left: 2, right: -2, bottom: -2,
-    backgroundColor: '#111', borderRadius: 12,
-  },
-  googleBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#fff', borderWidth: 2, borderColor: '#111', borderRadius: 12,
-  },
-  googleIcon: { fontSize: 14, fontWeight: '900', color: '#D12052' },
-  googleText: { fontSize: 11, fontWeight: '900', color: '#111', letterSpacing: 0.5 },
-
   footer: { marginTop: 22, alignItems: 'center' },
   footerText: { fontSize: 11, fontWeight: '700', color: '#555', letterSpacing: 0.5 },
   footerLink: { color: '#D12052', fontWeight: '900', textDecorationLine: 'underline' },
 });
 
-export default LoginPage;
+export default RegisterPage;
