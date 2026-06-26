@@ -157,5 +157,23 @@ export const checkoutStyles = StyleSheet.create({
     borderRadius: 14, paddingVertical: 18, alignItems: 'center',
   },
   orderBtnText: { fontSize: 15, fontWeight: '900', color: '#111', letterSpacing: 0.5 },
+
+  // Saved address picker
+  addrOption: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    borderWidth: 2, borderColor: '#ddd', borderRadius: 12,
+    padding: 12, marginBottom: 8, backgroundColor: '#fafafa',
+  },
+  addrOptionActive: { borderColor: '#111', backgroundColor: '#FFFDE7' },
+  addrOptionLeft: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, flex: 1 },
+  addrRadio: {
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#ccc',
+    alignItems: 'center', justifyContent: 'center', marginTop: 2,
+  },
+  addrRadioActive: { borderColor: '#111' },
+  addrRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#111' },
+  addrLabel: { fontSize: 13, fontWeight: '900', color: '#111', marginBottom: 2 },
+  addrDetail: { fontSize: 12, color: '#555', lineHeight: 17 },
+  addrPhone: { fontSize: 12, color: '#888', marginTop: 2 },
 });
 

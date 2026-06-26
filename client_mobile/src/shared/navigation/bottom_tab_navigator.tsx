@@ -10,6 +10,7 @@ import { SearchPage } from '../../features/search/pages/search_page';
 import { CartPage } from '../../features/cart/pages/cart_page';
 import { ProfilePage } from '../../features/profile/pages/profile_page';
 import { OrdersPage } from '../../features/profile/pages/orders_page';
+import { ShippingAddressPage } from '../../features/profile/pages/shipping_address_page';
 import { useCart } from '../../features/cart/controllers/cart_context';
 
 // ─── Stack Navigators ─────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ function ProfileStackNavigator() {
     <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
       <ProfileStack.Screen name="ProfileMain" component={ProfilePage} />
       <ProfileStack.Screen name="ProfileOrders" component={OrdersPage} />
+      <ProfileStack.Screen name="ProfileShippingAddress" component={ShippingAddressPage} />
     </ProfileStack.Navigator>
   );
 }

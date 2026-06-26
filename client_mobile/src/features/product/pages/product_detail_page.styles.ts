@@ -1,7 +1,7 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width: W } = Dimensions.get('window');
-export const DETAIL_IMG_H = W * 0.9;
+export const DETAIL_IMG_H = W;
 
 export const detailStyles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#fff' },
@@ -96,10 +96,23 @@ export const detailStyles = StyleSheet.create({
   addBtnText: { fontSize: 14, fontWeight: '900', color: '#111', letterSpacing: 0.5 },
 
   view3dBtn: {
-    width: 56, height: 56, borderRadius: 14, borderWidth: 2.5, borderColor: '#111',
+    width: 50, height: 50, borderRadius: 14, borderWidth: 2.5, borderColor: '#111',
     backgroundColor: '#111', alignItems: 'center', justifyContent: 'center',
   },
   view3dText: { fontSize: 22 },
+
+  // Buy Now button
+  buyNowWrap: { position: 'relative' },
+  buyNowShadow: {
+    position: 'absolute', top: 5, left: 5, right: -5, bottom: -5,
+    backgroundColor: '#F45B26', borderRadius: 14,
+  },
+  buyNowBtn: {
+    backgroundColor: '#111', borderWidth: 2.5, borderColor: '#111',
+    borderRadius: 14, paddingVertical: 16, paddingHorizontal: 18,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  buyNowText: { fontSize: 13, fontWeight: '900', color: '#F8DE22', letterSpacing: 0.5 },
 
   // Loading / error
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },

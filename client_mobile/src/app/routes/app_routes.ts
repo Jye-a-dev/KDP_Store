@@ -18,6 +18,7 @@ export const AppRoutes = {
   // Profile stack
   profile: 'Profile',
   orders: 'Orders',
+  shippingAddress: 'ProfileShippingAddress',
 
   // Search
   search: 'Search',

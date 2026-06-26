@@ -1,10 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View, Text, FlatList, Image, Pressable, Alert,
   Modal, TextInput, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart } from '../controllers/cart_context';
+import { useAuth } from '../../auth/controllers/auth_context';
+import { API_BASE_URL } from '../../../core/constants/api_config';
 import { cartStyles, checkoutStyles } from './cart_page.styles';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -63,13 +65,74 @@ function CartItemRow({ item }: { item: ReturnType<typeof useCart>['items'][0] })
 
 // ─── CheckoutModal ────────────────────────────────────────────────────────────
 
+interface SavedAddress {
+  id: string;
+  label?: string;
+  recipient_name: string;
+  phone: string;
+  address: string;
+  is_default?: boolean;
+}
+
 function CheckoutModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { checkout, totalCount, totalPrice } = useCart();
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const { user, token } = useAuth();
+
+  const [name, setName] = useState(user?.full_name ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '');
   const [address, setAddress] = useState('');
   const [payMethod, setPayMethod] = useState<'COD' | 'VNPAY'>('COD');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Saved addresses
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [addrLoading, setAddrLoading] = useState(false);
+  const [selectedAddrId, setSelectedAddrId] = useState<string | null>(null);
+
+  // Auto-fill user info on open
+  useEffect(() => {
+    if (visible) {
+      setName(user?.full_name ?? '');
+      setPhone(user?.phone ?? '');
+      setAddress('');
+      setSelectedAddrId(null);
+    }
+  }, [visible, user]);
+
+  // Fetch saved addresses when modal opens
+  useEffect(() => {
+    if (!visible || !user?.id) return;
+    setAddrLoading(true);
+    fetch(`${API_BASE_URL}/users/${user.id}/addresses`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then((res) => res.ok ? res.json() : [])
+      .then((data: SavedAddress[]) => {
+        const list = Array.isArray(data) ? data : [];
+        setSavedAddresses(list);
+        // Auto-select default address
+        const def = list.find((a) => a.is_default) ?? list[0];
+        if (def) {
+          setSelectedAddrId(def.id);
+          setAddress(def.address);
+          // Override name/phone with saved address recipient if available
+          if (def.recipient_name) setName(def.recipient_name);
+          if (def.phone) setPhone(def.phone);
+        }
+      })
+      .catch(() => setSavedAddresses([]))
+      .finally(() => setAddrLoading(false));
+  }, [visible, user?.id, token]);
+
+  const handleSelectAddress = useCallback((addr: SavedAddress) => {
+    setSelectedAddrId(addr.id);
+    setAddress(addr.address);
+    setName(addr.recipient_name || user?.full_name || '');
+    setPhone(addr.phone || user?.phone || '');
+  }, [user]);
 
   const handlePlaceOrder = useCallback(async () => {
     if (!name.trim()) { Alert.alert('Thiếu thông tin', 'Vui lòng nhập họ tên'); return; }
@@ -93,12 +156,11 @@ function CheckoutModal({ visible, onClose }: { visible: boolean; onClose: () => 
         `Mã đơn hàng: #${result.orderId?.slice(0, 8).toUpperCase()}\n\nKDP Store sẽ liên hệ xác nhận trong thời gian sớm nhất.`,
         [{ text: 'OK' }]
       );
-      // Reset form
-      setName(''); setPhone(''); setAddress('');
+      setName(user?.full_name ?? ''); setPhone(user?.phone ?? ''); setAddress('');
     } else {
       Alert.alert('Đặt hàng thất bại', result.error ?? 'Vui lòng thử lại');
     }
-  }, [name, phone, address, payMethod, checkout, onClose]);
+  }, [name, phone, address, payMethod, checkout, onClose, user]);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -133,7 +195,37 @@ function CheckoutModal({ visible, onClose }: { visible: boolean; onClose: () => 
               </View>
             </View>
 
-            {/* Shipping info */}
+            {/* Saved addresses picker */}
+            {addrLoading ? (
+              <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color="#111" />
+                <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Đang tải địa chỉ đã lưu...</Text>
+              </View>
+            ) : savedAddresses.length > 0 ? (
+              <View style={{ marginBottom: 16 }}>
+                <Text style={checkoutStyles.sectionLabel}>ĐỊA CHỈ ĐÃ LƯU</Text>
+                {savedAddresses.map((addr) => (
+                  <Pressable
+                    key={addr.id}
+                    style={[checkoutStyles.addrOption, selectedAddrId === addr.id && checkoutStyles.addrOptionActive]}
+                    onPress={() => handleSelectAddress(addr)}
+                  >
+                    <View style={checkoutStyles.addrOptionLeft}>
+                      <View style={[checkoutStyles.addrRadio, selectedAddrId === addr.id && checkoutStyles.addrRadioActive]}>
+                        {selectedAddrId === addr.id && <View style={checkoutStyles.addrRadioDot} />}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={checkoutStyles.addrLabel}>{addr.label ?? 'Địa chỉ'} · {addr.recipient_name}</Text>
+                        <Text style={checkoutStyles.addrDetail} numberOfLines={2}>{addr.address}</Text>
+                        <Text style={checkoutStyles.addrPhone}>{addr.phone}</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {/* Shipping info (editable, pre-filled) */}
             <Text style={checkoutStyles.sectionLabel}>THÔNG TIN GIAO HÀNG</Text>
 
             <View style={checkoutStyles.fieldWrap}>
@@ -164,7 +256,7 @@ function CheckoutModal({ visible, onClose }: { visible: boolean; onClose: () => 
               <TextInput
                 style={[checkoutStyles.input, checkoutStyles.inputMultiline]}
                 value={address}
-                onChangeText={setAddress}
+                onChangeText={(t) => { setAddress(t); setSelectedAddrId(null); }}
                 placeholder="123 Đường ABC, Quận X, TP. HCM"
                 placeholderTextColor="#bbb"
                 multiline

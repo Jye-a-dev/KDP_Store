@@ -85,7 +85,7 @@ export function ProfilePage() {
           <MenuItem
             icon="📍"
             label="Địa chỉ giao hàng"
-            onPress={() => handlePlaceholder('Địa chỉ giao hàng')}
+            onPress={() => navigation.navigate('ProfileShippingAddress')}
           />
           <MenuItem
             icon="🔒"

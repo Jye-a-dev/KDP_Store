@@ -5,9 +5,9 @@ import {
   Alert, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCart } from '../../cart/controllers/cart_context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { API_ENDPOINTS } from '../../../core/constants/api_config';
-import { useCart } from '../../cart/controllers/cart_context';
 import { detailStyles, DETAIL_IMG_H } from './product_detail_page.styles';
 
 const { width: W } = Dimensions.get('window');
@@ -89,6 +89,23 @@ export function ProductDetailPage() {
     Alert.alert('🛒 Đã thêm vào giỏ!', product.name, [{ text: 'OK' }]);
   }, [product, addItem]);
 
+  const handleBuyNow = useCallback(async () => {
+    if (!product) return;
+    const effectivePrice = product.discount_price && parseFloat(product.discount_price) > 0
+      ? parseFloat(product.discount_price)
+      : parseFloat(product.price);
+    const originalPrice = parseFloat(product.price);
+    await addItem({
+      productId: product.id,
+      name: product.name,
+      price: effectivePrice,
+      originalPrice: originalPrice !== effectivePrice ? originalPrice : undefined,
+      image: product.images_2d?.[0],
+    }, 1);
+    // Navigate to Cart tab
+    navigation.navigate('TabCart');
+  }, [product, addItem, navigation]);
+
 
   const cartQty = items.find((i) => i.productId === productId)?.quantity ?? 0;
 
@@ -153,7 +170,7 @@ export function ProductDetailPage() {
               scrollEventThrottle={16}
               keyExtractor={(_, i) => String(i)}
               renderItem={({ item: uri }) => (
-                <Image source={{ uri }} style={detailStyles.carouselImg} resizeMode="cover" />
+                <Image source={{ uri }} style={detailStyles.carouselImg} resizeMode="contain" />
               )}
             />
           ) : (
@@ -255,10 +272,19 @@ export function ProductDetailPage() {
             disabled={product.stock === 0}
           >
             <Text style={detailStyles.addBtnText}>
-              {product.stock === 0 ? 'HẾT HÀNG' : '🛒 THÊM VÀO GIỎ HÀNG'}
+              {product.stock === 0 ? 'HẾT HÀNG' : '🛒 THÊM VÀO GIỎ'}
             </Text>
           </Pressable>
         </Animated.View>
+
+        {product.stock > 0 && (
+          <View style={detailStyles.buyNowWrap}>
+            <View style={detailStyles.buyNowShadow} />
+            <Pressable style={detailStyles.buyNowBtn} onPress={handleBuyNow}>
+              <Text style={detailStyles.buyNowText}>⚡ MUA LIỀN</Text>
+            </Pressable>
+          </View>
+        )}
 
         {product.model_3d_url ? (
           <Pressable style={detailStyles.view3dBtn} onPress={() => Alert.alert('3D', 'Xem mô hình 3D sắp ra mắt!')}>
