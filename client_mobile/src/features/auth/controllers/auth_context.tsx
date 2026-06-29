@@ -14,6 +14,7 @@ export interface AuthContextValue {
   register: (fullName: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  updateProfile: (updatedFields: Partial<StorageUser>) => Promise<void>;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -122,6 +123,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHasCompletedOnboarding(true);
   }, []);
 
+  // ─── updateProfile ──────────────────────────────────────────────────────────
+  const updateProfile = useCallback(async (updatedFields: Partial<StorageUser>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updatedUser = { ...prev, ...updatedFields };
+      StorageService.setAuthUser(updatedUser).catch((e) =>
+        console.error('[Auth] setAuthUser error:', e)
+      );
+      return updatedUser;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -134,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         completeOnboarding,
+        updateProfile,
       }}
     >
       {children}

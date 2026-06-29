@@ -23,7 +23,7 @@ interface Address {
 
 export function ShippingAddressPage() {
   const navigation = useNavigation<any>();
-  const { user, token } = useAuth();
+  const { user, token, updateProfile } = useAuth();
 
   // Seed from user.addresses immediately so data shows without network round-trip
   const [addresses, setAddresses] = useState<Address[]>(() => {
@@ -56,21 +56,22 @@ export function ShippingAddressPage() {
     if (!user?.id) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/users/${user.id}/addresses`, {
+      const res = await fetch(`${API_BASE_URL}/users/${user.id}`, {
         headers: makeHeaders(),
       });
       if (res.ok) {
         const data = await res.json();
-        setAddresses(Array.isArray(data) ? data : []);
-      } else {
-        // API endpoint may not exist — keep whatever we seeded from user object
+        const freshAddresses = Array.isArray(data.addresses) ? data.addresses : [];
+        setAddresses(freshAddresses);
+        // Sync context
+        await updateProfile({ addresses: freshAddresses });
       }
-    } catch {
-      // keep seeded data on network error
+    } catch (e) {
+      console.error('[Addresses] fetch error:', e);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, makeHeaders]);
+  }, [user?.id, makeHeaders, updateProfile]);
 
   useEffect(() => { fetchAddresses(); }, [fetchAddresses]);
 
@@ -83,32 +84,51 @@ export function ShippingAddressPage() {
 
     setIsSaving(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/users/${user!.id}/addresses`, {
-        method: 'POST',
+      const newAddressItem: Address = {
+        id: Date.now().toString(),
+        label: label.trim() || 'Nhà',
+        recipient_name: recipientName.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+        is_default: isDefault || addresses.length === 0,
+      };
+
+      let updatedAddresses = [...addresses];
+      if (newAddressItem.is_default) {
+        updatedAddresses = updatedAddresses.map((addr) => ({ ...addr, is_default: false }));
+      }
+      updatedAddresses.push(newAddressItem);
+
+      // Ensure at least one is default
+      if (updatedAddresses.length > 0 && !updatedAddresses.some((addr) => addr.is_default)) {
+        updatedAddresses[0].is_default = true;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/users/${user!.id}`, {
+        method: 'PATCH',
         headers: makeHeaders(),
-        body: JSON.stringify({
-          label: label.trim() || 'Nhà',
-          recipient_name: recipientName.trim(),
-          phone: phone.trim(),
-          address: address.trim(),
-          is_default: isDefault,
-        }),
+        body: JSON.stringify({ addresses: updatedAddresses }),
       });
+
       if (res.ok) {
         setShowForm(false);
-        setLabel(''); setRecipientName(user?.full_name ?? '');
-        setPhone(user?.phone ?? ''); setAddress(''); setIsDefault(false);
-        await fetchAddresses();
+        setLabel('');
+        setRecipientName(user?.full_name ?? '');
+        setPhone(user?.phone ?? '');
+        setAddress('');
+        setIsDefault(false);
+        setAddresses(updatedAddresses);
+        await updateProfile({ addresses: updatedAddresses });
       } else {
         const j = await res.json().catch(() => ({}));
         Alert.alert('Lỗi', j?.message ?? 'Không thể lưu địa chỉ');
       }
-    } catch {
+    } catch (e) {
       Alert.alert('Lỗi', 'Lỗi kết nối');
     } finally {
       setIsSaving(false);
     }
-  }, [recipientName, phone, address, label, isDefault, user, makeHeaders, fetchAddresses]);
+  }, [recipientName, phone, address, label, isDefault, user, addresses, makeHeaders, updateProfile]);
 
   // ── Delete address ─────────────────────────────────────────────────────────
 
@@ -118,30 +138,54 @@ export function ShippingAddressPage() {
       {
         text: 'Xóa', style: 'destructive', onPress: async () => {
           try {
-            const res = await fetch(`${API_BASE_URL}/users/${user!.id}/addresses/${id}`, {
-              method: 'DELETE', headers: makeHeaders(),
-            });
-            if (res.ok || res.status === 404) {
-              await fetchAddresses();
+            const isDeletedDefault = addresses.find((a) => a.id === id)?.is_default;
+            let updatedAddresses = addresses.filter((addr) => addr.id !== id);
+
+            if (isDeletedDefault && updatedAddresses.length > 0) {
+              updatedAddresses[0].is_default = true;
             }
-          } catch { /* silent */ }
+
+            const res = await fetch(`${API_BASE_URL}/users/${user!.id}`, {
+              method: 'PATCH',
+              headers: makeHeaders(),
+              body: JSON.stringify({ addresses: updatedAddresses }),
+            });
+
+            if (res.ok) {
+              setAddresses(updatedAddresses);
+              await updateProfile({ addresses: updatedAddresses });
+            }
+          } catch (e) {
+            console.error('[Addresses] delete error:', e);
+          }
         },
       },
     ]);
-  }, [user, makeHeaders, fetchAddresses]);
+  }, [user, addresses, makeHeaders, updateProfile]);
 
   // ── Set default ────────────────────────────────────────────────────────────
 
   const handleSetDefault = useCallback(async (id: string) => {
     try {
-      await fetch(`${API_BASE_URL}/users/${user!.id}/addresses/${id}`, {
+      const updatedAddresses = addresses.map((addr) => ({
+        ...addr,
+        is_default: addr.id === id,
+      }));
+
+      const res = await fetch(`${API_BASE_URL}/users/${user!.id}`, {
         method: 'PATCH',
         headers: makeHeaders(),
-        body: JSON.stringify({ is_default: true }),
+        body: JSON.stringify({ addresses: updatedAddresses }),
       });
-      await fetchAddresses();
-    } catch { /* silent */ }
-  }, [user, makeHeaders, fetchAddresses]);
+
+      if (res.ok) {
+        setAddresses(updatedAddresses);
+        await updateProfile({ addresses: updatedAddresses });
+      }
+    } catch (e) {
+      console.error('[Addresses] set default error:', e);
+    }
+  }, [user, addresses, makeHeaders, updateProfile]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

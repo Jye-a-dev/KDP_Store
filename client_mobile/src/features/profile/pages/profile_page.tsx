@@ -41,10 +41,6 @@ export function ProfilePage() {
     ]);
   };
 
-  const handlePlaceholder = (feature: string) => {
-    Alert.alert(feature, 'Tính năng này sắp ra mắt! 🚀');
-  };
-
   return (
     <SafeAreaView style={profileStyles.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -78,34 +74,24 @@ export function ProfilePage() {
         <View style={profileStyles.menuSection}>
           <Text style={profileStyles.menuLabel}>TÀI KHOẢN</Text>
           <MenuItem
+            icon="👤"
+            label="Chỉnh sửa thông tin"
+            onPress={() => navigation.navigate('ProfileEdit')}
+          />
+          <MenuItem
             icon="📦"
             label="Đơn hàng của tôi"
             onPress={() => navigation.navigate('ProfileOrders')}
           />
           <MenuItem
+            icon="❤️"
+            label="Sản phẩm yêu thích"
+            onPress={() => navigation.navigate('ProfileWishlist')}
+          />
+          <MenuItem
             icon="📍"
             label="Địa chỉ giao hàng"
             onPress={() => navigation.navigate('ProfileShippingAddress')}
-          />
-          <MenuItem
-            icon="🔒"
-            label="Đổi mật khẩu"
-            onPress={() => handlePlaceholder('Đổi mật khẩu')}
-          />
-        </View>
-
-        {/* ── Menu: Hỗ trợ ── */}
-        <View style={profileStyles.menuSection}>
-          <Text style={profileStyles.menuLabel}>HỖ TRỢ</Text>
-          <MenuItem
-            icon="💬"
-            label="Chat với KDP Store"
-            onPress={() => handlePlaceholder('Chat hỗ trợ')}
-          />
-          <MenuItem
-            icon="⭐"
-            label="Đánh giá ứng dụng"
-            onPress={() => handlePlaceholder('Đánh giá app')}
           />
         </View>
 

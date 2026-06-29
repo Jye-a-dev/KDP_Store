@@ -19,6 +19,8 @@ export const AppRoutes = {
   profile: 'Profile',
   orders: 'Orders',
   shippingAddress: 'ProfileShippingAddress',
+  editProfile: 'ProfileEdit',
+  wishlist: 'ProfileWishlist',
 
   // Search
   search: 'Search',

@@ -11,6 +11,8 @@ import { CartPage } from '../../features/cart/pages/cart_page';
 import { ProfilePage } from '../../features/profile/pages/profile_page';
 import { OrdersPage } from '../../features/profile/pages/orders_page';
 import { ShippingAddressPage } from '../../features/profile/pages/shipping_address_page';
+import { EditProfilePage } from '../../features/profile/pages/edit_profile_page';
+import { WishlistPage } from '../../features/profile/pages/wishlist_page';
 import { useCart } from '../../features/cart/controllers/cart_context';
 
 // ─── Stack Navigators ─────────────────────────────────────────────────────────
@@ -45,6 +47,9 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen name="ProfileMain" component={ProfilePage} />
       <ProfileStack.Screen name="ProfileOrders" component={OrdersPage} />
       <ProfileStack.Screen name="ProfileShippingAddress" component={ShippingAddressPage} />
+      <ProfileStack.Screen name="ProfileEdit" component={EditProfilePage} />
+      <ProfileStack.Screen name="ProfileWishlist" component={WishlistPage} />
+      <ProfileStack.Screen name="ProfileProductDetail" component={ProductDetailPage} />
     </ProfileStack.Navigator>
   );
 }

@@ -1,0 +1,145 @@
+import { StyleSheet } from 'react-native';
+
+export const editProfileStyles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#fff' },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderBottomWidth: 2.5,
+    borderBottomColor: '#111',
+    backgroundColor: '#fff',
+    gap: 10,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backText: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { flex: 1, fontSize: 15, fontWeight: '900', color: '#111', letterSpacing: 0.5 },
+
+  container: { flex: 1, padding: 20 },
+
+  // Avatar Picker
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+    backgroundColor: '#f7f9fa',
+    borderWidth: 2,
+    borderColor: '#111',
+    borderRadius: 16,
+    padding: 16,
+  },
+  avatarTitle: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#03AED2',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
+  avatarPreviewWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2.5,
+    borderColor: '#111',
+    backgroundColor: '#white',
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  avatarPreview: { width: '100%', height: '100%', objectFit: 'cover' },
+  
+  presetsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  presetCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#111',
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  },
+  presetCircleActive: {
+    borderColor: '#F8DE22',
+    borderWidth: 3,
+  },
+  presetImg: { width: '100%', height: '100%' },
+
+  // Inputs
+  fieldGroup: { marginBottom: 18, position: 'relative' },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#111',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  inputWrap: { position: 'relative' },
+  inputShadow: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    backgroundColor: '#111',
+    borderRadius: 10,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#111',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111',
+  },
+  inputDisabled: {
+    backgroundColor: '#e6e6e6',
+    color: '#888',
+  },
+
+  // Save Button
+  btnWrap: { position: 'relative', marginTop: 12, marginBottom: 32 },
+  btnShadow: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    right: -4,
+    bottom: -4,
+    backgroundColor: '#111',
+    borderRadius: 12,
+  },
+  btn: {
+    backgroundColor: '#F8DE22',
+    borderWidth: 2.5,
+    borderColor: '#111',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#111',
+    letterSpacing: 1,
+  },
+});

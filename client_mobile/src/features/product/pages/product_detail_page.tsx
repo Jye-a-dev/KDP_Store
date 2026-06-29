@@ -2,9 +2,11 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, Image, Pressable, FlatList,
   ActivityIndicator, Dimensions, NativeSyntheticEvent, NativeScrollEvent,
-  Alert, Animated,
+  Alert, Animated, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../auth/controllers/auth_context';
 import { useCart } from '../../cart/controllers/cart_context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { API_ENDPOINTS } from '../../../core/constants/api_config';
@@ -17,6 +19,7 @@ const { width: W } = Dimensions.get('window');
 interface ProductDetail {
   id: number;
   name: string;
+  slug: string;
   price: string;
   discount_price?: string | null;
   description?: string | null;
@@ -37,12 +40,48 @@ export function ProductDetailPage() {
   const route = useRoute<RouteProp<{ ProductDetail: { productId: number; productName?: string } }, 'ProductDetail'>>();
   const { productId, productName } = route.params;
 
+  const { user } = useAuth();
   const { addItem, items } = useCart();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeImg, setActiveImg] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
   const addAnim = useRef(new Animated.Value(1)).current;
+
+  // Read liked state from AsyncStorage
+  useEffect(() => {
+    (async () => {
+      if (!user?.id) return;
+      try {
+        const stored = await AsyncStorage.getItem(`@kdp_wishlist_${user.id}`);
+        const wishlist: number[] = stored ? JSON.parse(stored) : [];
+        setIsLiked(wishlist.includes(productId));
+      } catch (e) {
+        console.error('[Wishlist] Read error:', e);
+      }
+    })();
+  }, [user?.id, productId]);
+
+  const toggleWishlist = async () => {
+    if (!user?.id) return;
+    try {
+      const stored = await AsyncStorage.getItem(`@kdp_wishlist_${user.id}`);
+      let wishlist: number[] = stored ? JSON.parse(stored) : [];
+
+      if (wishlist.includes(productId)) {
+        wishlist = wishlist.filter((id) => id !== productId);
+        setIsLiked(false);
+      } else {
+        wishlist.push(productId);
+        setIsLiked(true);
+      }
+
+      await AsyncStorage.setItem(`@kdp_wishlist_${user.id}`, JSON.stringify(wishlist));
+    } catch (e) {
+      console.error('[Wishlist] Toggle error:', e);
+    }
+  };
 
   // Fetch product detail
   useEffect(() => {
@@ -106,6 +145,19 @@ export function ProductDetailPage() {
     navigation.navigate('TabCart');
   }, [product, addItem, navigation]);
 
+  const handleView3D = useCallback(async () => {
+    if (!product?.slug) {
+      Alert.alert('Lỗi', 'Không thể mở mô hình 3D cho sản phẩm này.');
+      return;
+    }
+    const webUrl = `https://kdp-store-pi.vercel.app/products/${product.slug}`;
+    try {
+      await Linking.openURL(webUrl);
+    } catch {
+      Alert.alert('Lỗi', 'Không thể mở trình duyệt.');
+    }
+  }, [product?.slug]);
+
 
   const cartQty = items.find((i) => i.productId === productId)?.quantity ?? 0;
 
@@ -155,6 +207,11 @@ export function ProductDetailPage() {
           <Text style={detailStyles.backText}>←</Text>
         </Pressable>
         <Text style={detailStyles.backTitle} numberOfLines={1}>{product.name}</Text>
+        <Pressable style={detailStyles.heartBtn} onPress={toggleWishlist}>
+          <Text style={[detailStyles.heartText, isLiked && { color: '#F45B26' }]}>
+            {isLiked ? '❤️' : '🤍'}
+          </Text>
+        </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
@@ -287,7 +344,7 @@ export function ProductDetailPage() {
         )}
 
         {product.model_3d_url ? (
-          <Pressable style={detailStyles.view3dBtn} onPress={() => Alert.alert('3D', 'Xem mô hình 3D sắp ra mắt!')}>
+          <Pressable style={detailStyles.view3dBtn} onPress={handleView3D}>
             <Text style={detailStyles.view3dText}>🔮</Text>
           </Pressable>
         ) : null}

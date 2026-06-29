@@ -19,6 +19,11 @@ export const detailStyles = StyleSheet.create({
   },
   backText: { fontSize: 18 },
   backTitle: { fontSize: 15, fontWeight: '900', color: '#111', flex: 1 },
+  heartBtn: {
+    width: 38, height: 38, borderRadius: 10, borderWidth: 2, borderColor: '#111',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff',
+  },
+  heartText: { fontSize: 18 },
 
   // Image carousel
   carousel: { width: W, height: DETAIL_IMG_H, backgroundColor: '#f5f5f5' },
