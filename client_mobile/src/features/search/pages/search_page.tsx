@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { API_ENDPOINTS } from '../../../core/constants/api_config';
+import { API_ENDPOINTS, API_BASE_URL } from '../../../core/constants/api_config';
 import { AppRoutes } from '../../../app/routes/app_routes';
 import { searchStyles, CARD_W } from './search_page.styles';
 
@@ -30,10 +30,41 @@ function formatVND(price: string | number): string {
   return `${Math.round(n)}₫`;
 }
 
+function formatImages(images2d: any): string[] {
+  let list: string[] = [];
+  if (Array.isArray(images2d)) {
+    list = images2d;
+  } else if (typeof images2d === 'string' && images2d.trim()) {
+    const trimmed = images2d.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) list = parsed;
+      } catch (e) {
+        list = [trimmed];
+      }
+    } else if (trimmed.includes(',')) {
+      list = trimmed.split(',').map((img) => img.trim()).filter(Boolean);
+    } else {
+      list = [trimmed];
+    }
+  }
+
+  return list.map((img) => {
+    if (!img) return '';
+    const trimmedImg = img.trim();
+    if (trimmedImg.startsWith('/') || trimmedImg.startsWith('uploads/')) {
+      const cleanPath = trimmedImg.startsWith('/') ? trimmedImg : `/${trimmedImg}`;
+      return `${API_BASE_URL}${cleanPath}`;
+    }
+    return trimmedImg;
+  }).filter(Boolean);
+}
+
 // ─── MiniProductCard ─────────────────────────────────────────────────────────
 
 function MiniProductCard({ product, onPress }: { product: Product; onPress: () => void }) {
-  const imgUri = product.images_2d?.[0];
+  const imgUri = formatImages(product.images_2d)[0];
   const hasDiscount = product.discount_price && parseFloat(product.discount_price) > 0;
 
   return (
@@ -87,7 +118,7 @@ export function SearchPage() {
     }
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_ENDPOINTS.products}?search=${encodeURIComponent(q)}&limit=40`);
+      const res = await fetch(`${API_ENDPOINTS.products}?search=${encodeURIComponent(q)}&limit=10000`);
       if (res.ok) {
         const data = await res.json();
         const list: Product[] = (data.data ?? data) as Product[];

@@ -50,6 +50,37 @@ function getGreeting(name: string): string {
   return `${prefix}, ${name.split(' ').pop()}!`;
 }
 
+function formatImages(images2d: any): string[] {
+  let list: string[] = [];
+  if (Array.isArray(images2d)) {
+    list = images2d;
+  } else if (typeof images2d === 'string' && images2d.trim()) {
+    const trimmed = images2d.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) list = parsed;
+      } catch (e) {
+        list = [trimmed];
+      }
+    } else if (trimmed.includes(',')) {
+      list = trimmed.split(',').map((img) => img.trim()).filter(Boolean);
+    } else {
+      list = [trimmed];
+    }
+  }
+
+  return list.map((img) => {
+    if (!img) return '';
+    const trimmedImg = img.trim();
+    if (trimmedImg.startsWith('/') || trimmedImg.startsWith('uploads/')) {
+      const cleanPath = trimmedImg.startsWith('/') ? trimmedImg : `/${trimmedImg}`;
+      return `${API_BASE_URL}${cleanPath}`;
+    }
+    return trimmedImg;
+  }).filter(Boolean);
+}
+
 // ─── ProductCard ────────────────────────────────────────────────────────────
 
 function ProductCard({ product, index }: { product: Product; index: number }) {
@@ -82,7 +113,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
     Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
   };
 
-  const imgUri = Array.isArray(product.images_2d) ? product.images_2d[0] : product.images_2d;
+  const imgUri = formatImages(product.images_2d)[0];
   const hasDiscount = product.discount_price && parseFloat(product.discount_price) > 0;
 
   return (
@@ -236,7 +267,7 @@ export function DashboardPage() {
   const fetchData = useCallback(async () => {
     try {
       const [pRes, cRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/products?limit=20&page=1&sort_by=created_at&sort_order=DESC`),
+        fetch(`${API_BASE_URL}/products?limit=10000&page=1&sort_by=created_at&sort_order=DESC`),
         fetch(`${API_BASE_URL}/categories?limit=50`),
       ]);
 

@@ -45,7 +45,7 @@ export function WishlistPage() {
       }
 
       // Fetch all products to filter (similar to search & main dashboard behavior)
-      const res = await fetch(`${API_BASE_URL}/products?limit=100`);
+      const res = await fetch(`${API_BASE_URL}/products?limit=10000`);
       if (res.ok) {
         const resData = await res.json();
         const allProducts = (Array.isArray(resData) ? resData : resData.data ?? []) as Product[];
@@ -73,10 +73,7 @@ export function WishlistPage() {
   };
 
   const renderProductCard = ({ item }: { item: Product }) => {
-    const images = typeof item.images_2d === 'string'
-      ? JSON.parse(item.images_2d)
-      : item.images_2d;
-    const imgUri = Array.isArray(images) && images.length > 0 ? images[0] : null;
+    const imgUri = formatImages(item.images_2d)[0];
 
     const hasDiscount = item.discount_price && parseFloat(item.discount_price) > 0;
     const finalPrice = hasDiscount ? parseFloat(item.discount_price!) : parseFloat(item.price);
@@ -181,7 +178,38 @@ export function WishlistPage() {
   );
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+function formatImages(images2d: any): string[] {
+  let list: string[] = [];
+  if (Array.isArray(images2d)) {
+    list = images2d;
+  } else if (typeof images2d === 'string' && images2d.trim()) {
+    const trimmed = images2d.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) list = parsed;
+      } catch (e) {
+        list = [trimmed];
+      }
+    } else if (trimmed.includes(',')) {
+      list = trimmed.split(',').map((img) => img.trim()).filter(Boolean);
+    } else {
+      list = [trimmed];
+    }
+  }
+
+  return list.map((img) => {
+    if (!img) return '';
+    const trimmedImg = img.trim();
+    if (trimmedImg.startsWith('/') || trimmedImg.startsWith('uploads/')) {
+      const cleanPath = trimmedImg.startsWith('/') ? trimmedImg : `/${trimmedImg}`;
+      return `${API_BASE_URL}${cleanPath}`;
+    }
+    return trimmedImg;
+  }).filter(Boolean);
+}
+
 function formatVND(price: string | number): string {
   const n = typeof price === 'string' ? parseFloat(price) : price;
   if (isNaN(n)) return '—';

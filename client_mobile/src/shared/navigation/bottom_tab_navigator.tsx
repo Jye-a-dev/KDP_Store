@@ -76,9 +76,9 @@ function TabIcon({
 }
 
 const tabIconStyles = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', width: 60, paddingTop: 2 },
+  wrap: { alignItems: 'center', justifyContent: 'center', width: 80, paddingTop: 2 },
   activeDot: {
-    position: 'absolute', top: -6, width: 20, height: 3,
+    position: 'absolute', top: -2, width: 20, height: 3,
     backgroundColor: '#F8DE22', borderRadius: 2, borderWidth: 1, borderColor: '#111',
   },
   iconWrap: {

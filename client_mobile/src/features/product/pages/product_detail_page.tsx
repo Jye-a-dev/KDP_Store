@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, Image, Pressable, FlatList,
   ActivityIndicator, Dimensions, NativeSyntheticEvent, NativeScrollEvent,
-  Alert, Animated, Linking,
+  Alert, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +11,8 @@ import { useCart } from '../../cart/controllers/cart_context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { API_ENDPOINTS } from '../../../core/constants/api_config';
 import { detailStyles, DETAIL_IMG_H } from './product_detail_page.styles';
+import { Product3DModal } from './product_3d_modal';
+import { formatImages, formatVND } from './product_helpers';
 
 const { width: W } = Dimensions.get('window');
 
@@ -111,12 +113,13 @@ export function ProductDetailPage() {
       : parseFloat(product.price);
     const originalPrice = parseFloat(product.price);
 
+    const parsedImages = formatImages(product.images_2d);
     await addItem({
       productId: product.id,
       name: product.name,
       price: effectivePrice,
       originalPrice: originalPrice !== effectivePrice ? originalPrice : undefined,
-      image: product.images_2d?.[0],
+      image: parsedImages[0],
     }, 1);
 
     // Bounce animation
@@ -134,29 +137,27 @@ export function ProductDetailPage() {
       ? parseFloat(product.discount_price)
       : parseFloat(product.price);
     const originalPrice = parseFloat(product.price);
+    const parsedImages = formatImages(product.images_2d);
     await addItem({
       productId: product.id,
       name: product.name,
       price: effectivePrice,
       originalPrice: originalPrice !== effectivePrice ? originalPrice : undefined,
-      image: product.images_2d?.[0],
+      image: parsedImages[0],
     }, 1);
     // Navigate to Cart tab
     navigation.navigate('TabCart');
   }, [product, addItem, navigation]);
 
-  const handleView3D = useCallback(async () => {
-    if (!product?.slug) {
+  const [is3dVisible, setIs3dVisible] = useState(false);
+
+  const handleView3D = useCallback(() => {
+    if (!product?.model_3d_url) {
       Alert.alert('Lỗi', 'Không thể mở mô hình 3D cho sản phẩm này.');
       return;
     }
-    const webUrl = `https://kdp-store-pi.vercel.app/products/${product.slug}`;
-    try {
-      await Linking.openURL(webUrl);
-    } catch {
-      Alert.alert('Lỗi', 'Không thể mở trình duyệt.');
-    }
-  }, [product?.slug]);
+    setIs3dVisible(true);
+  }, [product?.model_3d_url]);
 
 
   const cartQty = items.find((i) => i.productId === productId)?.quantity ?? 0;
@@ -197,7 +198,7 @@ export function ProductDetailPage() {
   }
 
   const hasDiscount = product.discount_price && parseFloat(product.discount_price) > 0;
-  const images = product.images_2d?.length > 0 ? product.images_2d : [];
+  const images = formatImages(product.images_2d);
 
   return (
     <SafeAreaView style={detailStyles.safe}>
@@ -349,18 +350,17 @@ export function ProductDetailPage() {
           </Pressable>
         ) : null}
       </View>
+
+      {product.model_3d_url && (
+        <Product3DModal
+          visible={is3dVisible}
+          onClose={() => setIs3dVisible(false)}
+          productName={product.name}
+          model3dUrl={product.model_3d_url}
+        />
+      )}
     </SafeAreaView>
   );
-}
-
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-function formatVND(price: string | number): string {
-  const n = typeof price === 'string' ? parseFloat(price) : price;
-  if (isNaN(n)) return '—';
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M₫`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K₫`;
-  return `${Math.round(n)}₫`;
 }
 
 export default ProductDetailPage;
